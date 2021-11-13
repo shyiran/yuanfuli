@@ -8,43 +8,43 @@ $api = app ('Dingo\Api\Routing\Router');
 $api->version ('v1', function ($api) {
     $api->group ([ 'prefix' => 'weixin' ], function ($api){
         //获取token
-        $api->get('getToken', '\App\Http\Controllers\Weixin\UserController@getToken');
+        $api->get('getToken', '\App\Http\Controllers\v1\Weixin\UserController@getToken');
         //通讯录管理
         //创建成员
-        $api->post('createUser', '\App\Http\Controllers\Weixin\UserController@createUser');
+        $api->post('createUser', '\App\Http\Controllers\v1\Weixin\UserController@createUser');
         //读取成员
-        $api->get('getUserInfo', '\App\Http\Controllers\Weixin\UserController@getUserInfo');
+        $api->get('getUserInfo', '\App\Http\Controllers\v1\Weixin\UserController@getUserInfo');
         //更新成员
-        $api->post('updataUserInfo', '\App\Http\Controllers\Weixin\UserController@updataUserInfo');
+        $api->post('updataUserInfo', '\App\Http\Controllers\v1\Weixin\UserController@updataUserInfo');
         //删除成员
-        $api->get('delUser', '\App\Http\Controllers\Weixin\UserController@delUser');
+        $api->get('delUser', '\App\Http\Controllers\v1\Weixin\UserController@delUser');
         //批量删除成员
-        $api->post('delUsers', '\App\Http\Controllers\Weixin\UserController@delUsers');
+        $api->post('delUsers', '\App\Http\Controllers\v1\Weixin\UserController@delUsers');
         //获取部门成员
-        $api->get('getDepartmentUser', '\App\Http\Controllers\Weixin\UserController@getDepartmentUser');
+        $api->get('getDepartmentUser', '\App\Http\Controllers\v1\Weixin\UserController@getDepartmentUser');
         //获取部门成员详情
-        $api->get('getDepartmentUserList', '\App\Http\Controllers\Weixin\UserController@getDepartmentUserList');
+        $api->get('getDepartmentUserList', '\App\Http\Controllers\v1\Weixin\UserController@getDepartmentUserList');
         //userid转openid
-        $api->post('convert_to_openid', '\App\Http\Controllers\Weixin\UserController@convert_to_openid');
+        $api->post('convert_to_openid', '\App\Http\Controllers\v1\Weixin\UserController@convert_to_openid');
         //openid转userid
-        $api->post('convert_to_userid', '\App\Http\Controllers\Weixin\UserController@convert_to_userid');
+        $api->post('convert_to_userid', '\App\Http\Controllers\v1\Weixin\UserController@convert_to_userid');
         //二次验证???
         //邀请成员
-        $api->post('inviteUser', '\App\Http\Controllers\Weixin\UserController@inviteUser');
+        $api->post('inviteUser', '\App\Http\Controllers\v1\Weixin\UserController@inviteUser');
         //获取加入企业二维码
-        $api->get('get_join_qrcode', '\App\Http\Controllers\Weixin\UserController@get_join_qrcode');
+        $api->get('get_join_qrcode', '\App\Http\Controllers\v1\Weixin\UserController@get_join_qrcode');
         //获取企业活跃成员数
-        $api->post('get_active_stat', '\App\Http\Controllers\Weixin\UserController@get_active_stat');
+        $api->post('get_active_stat', '\App\Http\Controllers\v1\Weixin\UserController@get_active_stat');
 
         //通讯录管理
         //创建部门
-        $api->post('createDepartment', '\App\Http\Controllers\Weixin\DepartmentController@createDepartment');
+        $api->post('createDepartment', '\App\Http\Controllers\v1\Weixin\DepartmentController@createDepartment');
         //更新部门
-        $api->post('updateDepartment', '\App\Http\Controllers\Weixin\DepartmentController@updateDepartment');
+        $api->post('updateDepartment', '\App\Http\Controllers\v1\Weixin\DepartmentController@updateDepartment');
         //删除部门
-        $api->get('delDepartment', '\App\Http\Controllers\Weixin\DepartmentController@delDepartment');
+        $api->get('delDepartment', '\App\Http\Controllers\v1\Weixin\DepartmentController@delDepartment');
         //获取部门列表
-        $api->get('getDepartmentList', '\App\Http\Controllers\Weixin\DepartmentController@getDepartmentList');
+        $api->get('getDepartmentList', '\App\Http\Controllers\v1\Weixin\DepartmentController@getDepartmentList');
 
         //标签管理
         //创建标签
@@ -72,15 +72,7 @@ $api->version ('v1', function ($api) {
 });
 $api->version ('v2', function ($api) {
     $api->group ([ 'prefix' => 'weixin' ], function ($api){
-
+        //获取token
+        $api->get('getToken', '\App\Http\Controllers\v2\Weixin\UserController@getToken');
     });
 });
-/*$api->version ('v1', function ($api) {
-    $api->group ([ 'prefix' => 'user' ], function ($api) {
-        $api->resource ('show', \App\Http\Controllers\User\UserController::class);
-
-
-
-$api->version('v1', function ($api) {
-
-});*/

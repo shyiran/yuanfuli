@@ -38,9 +38,12 @@ class RouteServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         $this->routes(function () {
-            //微信API接口
+            //七牛API接口
             Route::prefix('api')
-                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/qiniu.php'));
+            //企业微信API接口
+            Route::prefix('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/weixinqy.php'));
             Route::prefix('api')

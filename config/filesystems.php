@@ -52,6 +52,14 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
+        //七牛云
+        'qiniu' => [
+            'driver'     => 'qiniu',
+            'access_key' => env('QINIU_ACCESS_KEY', 'QQ'),
+            'secret_key' => env('QINIU_SECRET_KEY', 'QQ'),
+            'bucket'     => env('QINIU_BUCKET', 'QQ'),
+            'domain'     => env('QINIU_DOMAIN', 'QQ'),
+        ],
 
     ],
 

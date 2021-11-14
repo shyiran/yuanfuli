@@ -7,6 +7,13 @@
 $api = app ('Dingo\Api\Routing\Router');
 $api->version ('v1', function ($api) {
     $api->group ([ 'prefix' => 'weixin' ], function ($api){
+        //获取服务商凭证 get_provider_token
+        $api->post('getProviderToken', '\App\Http\Controllers\v1\Weixin\UserController@getProviderToken');
+        //获取第三方应用凭证（suite_access_token） ??????
+        $api->post('getSuiteAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteAccessToken');
+        //获取企业凭证access_token
+        $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
+
         //获取token
         $api->get('getToken', '\App\Http\Controllers\v1\Weixin\UserController@getToken');
         //通讯录管理

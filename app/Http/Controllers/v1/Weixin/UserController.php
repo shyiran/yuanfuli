@@ -7,13 +7,44 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    //获取服务商凭证 get_provider_token
+    public function getProviderToken ()
+    {
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_provider_token";
+        $data = [ "corpid" => "ww0328d5bc6e988741", "provider_secret" => "kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs" ];
+        return posturl ($url, $data);
+    }
+
+    //获取第三方应用凭证（suite_access_token）
+    public function getSuiteAccessToken ()
+    {
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_suite_token";
+        $suite_id="AA";
+        $suite_secret="BB";
+        $suite_ticket="CC";
+        $data = [ "suite_id" => $suite_id, "suite_secret" => $suite_secret, "suite_ticket" => $suite_ticket];
+        return posturl ($url, $data);
+    }
+
+    //获取企业凭证access_token
+    public function getAccessToken ()
+    {
+        $suiteAccessToken="ssssssss";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=".$suiteAccessToken;
+        $auth_corpid="scs";
+        $permanent_code="ssssssssssss";
+        $data=[ "auth_corpid"=> $auth_corpid, "permanent_code"=> $permanent_code];
+
+    }
+
     //获取Token
     public function getToken ()
     {
+        // https://qyapi.weixin.qq.com/cgi-bin/service/get_provider_token
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/gettoken';
         $data = '?corpid=ww0328d5bc6e988741&corpsecret=kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs';
         //$h=array("Accept:application/vnd.myapp.v1+json");
-        return geturl ($url . $data,'');
+        return geturl ($url . $data, '');
     }
 
     //创建用户
@@ -149,12 +180,13 @@ class UserController extends Controller
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/get_active_stat?access_token=' . $this->authenticationToken;
         return posturl ($url);
     }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index ()
     {
         //
     }
@@ -164,7 +196,7 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create ()
     {
         //
     }
@@ -172,10 +204,10 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store (Request $request)
     {
         //
     }
@@ -183,10 +215,10 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show ($id)
     {
         //
     }
@@ -194,10 +226,10 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit ($id)
     {
         //
     }
@@ -205,11 +237,11 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update (Request $request, $id)
     {
         //
     }
@@ -217,10 +249,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy ($id)
     {
         //
     }

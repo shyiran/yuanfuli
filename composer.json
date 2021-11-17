@@ -28,8 +28,11 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },
+        "classmap": [
+            "app/Libraries/weixinqycallback"
+        ],
         "files":[
-            "helpers.php"
+            "app/helpers.php"
         ]
     },
     "autoload-dev": {

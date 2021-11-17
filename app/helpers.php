@@ -20,7 +20,8 @@ function http_request($url, $data = null)
     curl_close($curl);
     return $output;
 }
-function geturl($url,$data='',$headerArray=''){
+function geturl($url,$data=[],$headerArray=''){
+    $data  = json_encode($data);
     if($headerArray =='') {
         $headerArray = array ( "Content-type:application/json;", "Accept:application/json" );
     }

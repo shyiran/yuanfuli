@@ -11,6 +11,18 @@ $api->version ('v1', function ($api) {
         $api->post('getProviderToken', '\App\Http\Controllers\v1\Weixin\UserController@getProviderToken');
         //获取第三方应用凭证（suite_access_token） ??????
         $api->post('getSuiteAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteAccessToken');
+        //获取预授权码get_pre_auth_code
+        $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
+
+        //获取suite_ticket（suite_ticket）
+        $api->post('getSuiteTicket', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteTicket');
+        //获取getSuiteTicket（suite_ticket）
+        $api->get('getSuiteTicket', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteTicket');
+
+
+        //获取预授权码get_pre_auth_code
+        $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
+
         //获取企业凭证access_token
         $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
 

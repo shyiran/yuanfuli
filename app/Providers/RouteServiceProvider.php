@@ -38,6 +38,10 @@ class RouteServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         $this->routes(function () {
+            //腾讯云文档API接口
+            Route::prefix('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/txdocs.php'));
             //七牛API接口
             Route::prefix('api')
                 ->namespace($this->namespace)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\v1\Weixin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
@@ -11,7 +12,7 @@ class UserController extends Controller
     public function getProviderToken ()
     {
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_provider_token";
-        $data = [ "corpid" => "ww0328d5bc6e988741", "provider_secret" => "kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs" ];
+        $data = [ "corpid" => "ww0328d5bc6e988741", "provider_secret" => "oITvxYhiA6Q5y6FQ5yyDYceLrvosUK2nUX0Wa1sgCHxRewufpOphCk0r_qlpO2z0" ];
         return posturl ($url, $data);
     }
 
@@ -19,21 +20,99 @@ class UserController extends Controller
     public function getSuiteAccessToken ()
     {
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_suite_token";
-        $suite_id="AA";
-        $suite_secret="BB";
-        $suite_ticket="CC";
-        $data = [ "suite_id" => $suite_id, "suite_secret" => $suite_secret, "suite_ticket" => $suite_ticket];
+        $suite_id = "ww89216d45463b353d";
+        $suite_secret = "ueiq-2WhDiZrMV1Al6YhNa8tktICPzKi6vSoSNUYTm0";
+        $suite_ticket = Cache::get('SUITEICKET');
+        $data = [ "suite_id" => $suite_id, "suite_secret" => $suite_secret, "suite_ticket" => $suite_ticket ];
         return posturl ($url, $data);
     }
+    //获取预授权码get_pre_auth_code
+    public function getPreAuthCode(){
+        $s="qgfZQfKeDI3GMvjIXquh5mEgFokUSNZJ0V6bCqiCs7zQ8DTJfgVVeV9yGC7xY8UF7fA55OMDq9-cRVrbsRNDpqVPyG_1YAQKxmfdr8mEkQOWd11K3_byFVcYg9ThMTU7";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=".$s;
+        return geturl ($url);
+    }
+
+    //getSuiteTicket
+    //获取suite_ticket（suite_ticket）
+    public function getSuiteTicket ()
+    {
+        $encodingAesKey = "J3N3MbJQ9QAlrlMhFW9Tmf1PIJg9xNXQsYQhYcX3EfM";              //这是已有的值
+        $token = "sRVzMAL5Nqxa";                                                     //这是已有的值
+        $corpId = "ww0328d5bc6e988741";                                               //企业ID //这是已有的值
+        $suiteId = "ww89216d45463b353d";                                             //应用id //这是已有的值
+
+
+        $sVerifyMsgSig = $_GET['msg_signature'] ?? 0;                               //这是回调过来企业微信给的数据
+        $sVerifyTimeStamp = $_GET['timestamp'] ?? 0;                                //这是回调过来企业微信给的数据
+        $sVerifyNonce = $_GET['nonce'] ?? 0;                                        //这是回调过来企业微信给的数据
+        $sVerifyEchoStr = $_GET['echostr'] ?? 0;
+        //缓存数据
+        $file = "909090.txt";                                                   //这是xml格式的数据
+        $file1 = "909091.txt";                                                  //这是json的数据
+        $file2 = "909092.txt";                                                  //这是sEchoStr
+        $file3 = "909093.txt";                                                  //这是SUITEICKET
+        $file4 = "909094.txt";                                                  //这是ERROR
+        $file5 = "909095.txt";                                                  //这是解密后的内容
+        if ($sVerifyEchoStr) {
+            $sEchoStr = "";
+            $wxcpt = new \WXBizMsgCrypt($token, $encodingAesKey, $corpId);
+            $errCode = $wxcpt->VerifyURL ($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sVerifyEchoStr, $sEchoStr);
+            if ($errCode == 0) {
+                // 验证URL成功，将sEchoStr返回
+                file_put_contents ($file2, $sEchoStr . "\n\n", FILE_APPEND);
+                Cache::put ('SECHOSTR', $sEchoStr, 1200);
+                exit;
+            } else {
+                file_put_contents ($file4, "二次错误" . $sEchoStr . "\n\n", FILE_APPEND);
+                print("ERR: " . $errCode . "\n\n");
+            }
+        }
+        $sReqData = file_get_contents ('php://input');
+        if ($sReqData) {
+            file_put_contents ($file, "获取验证数据（新）" . date ('Y-m-d H:i:s') . "\n" . $sReqData . "\n", FILE_APPEND);
+            file_put_contents ($file1, json_encode ($_GET), FILE_APPEND);
+            Cache::put ('XMLHD', $sReqData, 1200);
+            Cache::put ('CSHD', json_encode ($_GET), 1200);
+        } else {
+            $sReqData = Cache::get ('XMLHD');
+        }
+        //
+        $wxcpt = new \WXBizMsgCrypt($token, $encodingAesKey, $suiteId);
+        $sMsg = '';  // 解析之后的明文
+        $err_code = $wxcpt->DecryptMsg ($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sReqData, $sMsg);
+        $xmls = simplexml_load_string ($sMsg, 'SimpleXMLElement', LIBXML_NOCDATA); //  xml格式转成对象
+        file_put_contents ($file5, "这是解密后的内容" . $sMsg . "\n" . $xmls->InfoType . "\n" . "ERROECODE:" . $err_code . "\n", FILE_APPEND);
+        if ($err_code == 0) {
+            switch ($xmls->InfoType) {
+                case 'suite_ticket'://推送suite_ticket协议每十分钟微信推送一次
+                    $xmls = json_decode (json_encode ($xmls), 1);
+                    $suite_ticket = $xmls['SuiteTicket'];
+                    if (!empty($suite_ticket)) {
+                        //  保存下获取到数据
+                        file_put_contents ($file3, "时间" . date ('Y-m-d H:i:s') . "suite_ticket值：" . $suite_ticket . "\n", FILE_APPEND);
+                        Cache::put ("SUITEICKET", $suite_ticket,1200);
+                        echo 'success';  // 返回企业微信消息 success
+                    } else {
+                        echo 200;//错误信息
+                    }
+                    break;
+            }
+        } else {
+            file_put_contents ($file4, $err_code . "\n", FILE_APPEND);
+        }
+    }
+
+
 
     //获取企业凭证access_token
     public function getAccessToken ()
     {
-        $suiteAccessToken="ssssssss";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=".$suiteAccessToken;
-        $auth_corpid="scs";
-        $permanent_code="ssssssssssss";
-        $data=[ "auth_corpid"=> $auth_corpid, "permanent_code"=> $permanent_code];
+        $suiteAccessToken = "ssssssss";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suiteAccessToken;
+        $auth_corpid = "scs";
+        $permanent_code = "ssssssssssss";
+        $data = [ "auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code ];
 
     }
 
@@ -41,10 +120,17 @@ class UserController extends Controller
     public function getToken ()
     {
         // https://qyapi.weixin.qq.com/cgi-bin/service/get_provider_token
+
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/gettoken';
+        //$data= [
+        //     "corpid" => "ww0328d5bc6e988741",
+        //    "corpsecret" => "kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs"];
+        $corpid = "ww0328d5bc6e988741";
+        $corpsecret = "kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs";
         $data = '?corpid=ww0328d5bc6e988741&corpsecret=kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs';
         //$h=array("Accept:application/vnd.myapp.v1+json");
-        return geturl ($url . $data, '');
+        // return $url .$data;
+        return geturl ($url . $data);
     }
 
     //创建用户
@@ -255,5 +341,10 @@ class UserController extends Controller
     public function destroy ($id)
     {
         //
+    }
+
+    public function ceshi ()
+    {
+        return "sssssss";
     }
 }

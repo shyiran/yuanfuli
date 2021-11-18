@@ -22,14 +22,16 @@ class UserController extends Controller
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_suite_token";
         $suite_id = "ww89216d45463b353d";
         $suite_secret = "ueiq-2WhDiZrMV1Al6YhNa8tktICPzKi6vSoSNUYTm0";
-        $suite_ticket = Cache::get('SUITEICKET');
+        $suite_ticket = Cache::get ('SUITEICKET');
         $data = [ "suite_id" => $suite_id, "suite_secret" => $suite_secret, "suite_ticket" => $suite_ticket ];
         return posturl ($url, $data);
     }
+
     //获取预授权码get_pre_auth_code
-    public function getPreAuthCode(){
-        $s="qgfZQfKeDI3GMvjIXquh5mEgFokUSNZJ0V6bCqiCs7zQ8DTJfgVVeV9yGC7xY8UF7fA55OMDq9-cRVrbsRNDpqVPyG_1YAQKxmfdr8mEkQOWd11K3_byFVcYg9ThMTU7";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=".$s;
+    public function getPreAuthCode ()
+    {
+        $s = "qgfZQfKeDI3GMvjIXquh5mEgFokUSNZJ0V6bCqiCs7zQ8DTJfgVVeV9yGC7xY8UF7fA55OMDq9-cRVrbsRNDpqVPyG_1YAQKxmfdr8mEkQOWd11K3_byFVcYg9ThMTU7";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=" . $s;
         return geturl ($url);
     }
 
@@ -91,7 +93,7 @@ class UserController extends Controller
                     if (!empty($suite_ticket)) {
                         //  保存下获取到数据
                         file_put_contents ($file3, "时间" . date ('Y-m-d H:i:s') . "suite_ticket值：" . $suite_ticket . "\n", FILE_APPEND);
-                        Cache::put ("SUITEICKET", $suite_ticket,1200);
+                        Cache::put ("SUITEICKET", $suite_ticket, 1200);
                         echo 'success';  // 返回企业微信消息 success
                     } else {
                         echo 200;//错误信息
@@ -103,6 +105,30 @@ class UserController extends Controller
         }
     }
 
+
+    //获取企业授权信息
+    public function getAuthInfo(){
+        $SUITE_ACCESS_TOKEN = "sc";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=".$SUITE_ACCESS_TOKEN;
+        $data= [ "auth_corpid" => "auth_corpid_value", "permanent_code" => "ascsc" ];
+        return posturl ($url, $data);
+    }
+
+    //获取企业凭证get_corp_token
+    public function getCorpToken(){
+        $SUITE_ACCESS_TOKEN = "sc";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=".$SUITE_ACCESS_TOKEN;
+        $data = [ "auth_corpid" => "auth_corpid_value", "permanent_code" => "1000046" ];
+        return posturl ($url, $data);
+    }
+    //获取应用的管理员列表
+    public function getAdminList ()
+    {
+        $SUITE_ACCESS_TOKEN = "sc";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_admin_list?suite_access_token=" . $SUITE_ACCESS_TOKEN;
+        $data = [ "auth_corpid" => "auth_corpid_value", "agentid" => "1000046" ];
+        return posturl ($url, $data);
+    }
 
 
     //获取企业凭证access_token

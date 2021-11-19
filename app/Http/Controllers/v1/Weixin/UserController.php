@@ -107,20 +107,32 @@ class UserController extends Controller
 
 
     //获取企业授权信息
-    public function getAuthInfo(){
+    public function getAuthInfo ()
+    {
         $SUITE_ACCESS_TOKEN = "sc";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=".$SUITE_ACCESS_TOKEN;
-        $data= [ "auth_corpid" => "auth_corpid_value", "permanent_code" => "ascsc" ];
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=" . $SUITE_ACCESS_TOKEN;
+        $data = [ "auth_corpid" => "auth_corpid_value", "permanent_code" => "ascsc" ];
         return posturl ($url, $data);
     }
 
     //获取企业凭证get_corp_token
-    public function getCorpToken(){
-        $SUITE_ACCESS_TOKEN = "sc";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=".$SUITE_ACCESS_TOKEN;
-        $data = [ "auth_corpid" => "auth_corpid_value", "permanent_code" => "1000046" ];
+    //auth_corpid  授权方corpid
+    //permanent_code 永久授权码，通过get_permanent_code获取
+    private function getCorpToken ($suite_access_token, $auth_corpid, $permanent_code)
+    {
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suite_access_token;
+        $data = [ "auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code ];
         return posturl ($url, $data);
     }
+    //获取企业永久授权码
+    private function getPermanentCode ($suite_access_token,$auth_lin_code)
+    {
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_permanent_code?suite_access_token=" . $suite_access_token;
+        $data = [ "auth_code" => $auth_lin_code];
+        
+    }
+
+
     //获取应用的管理员列表
     public function getAdminList ()
     {

@@ -29,12 +29,12 @@ $api->version ('v1', function ($api) {
         $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
 
         //获取企业凭证access_token
-        $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
+//      $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
 
         //获取企业授权信息
         $api->post('getAuthInfo', 'App\Http\Controllers\v1\Weixin\UserController@getAuthInfo');
         //获取企业凭证get_corp_token
-        $api->post('getCorpToken', 'App\Http\Controllers\v1\Weixin\UserController@getCorpToken');
+//        $api->post('getCorpToken', 'App\Http\Controllers\v1\Weixin\UserController@getCorpToken');
         //获取应用的管理员列表
         $api->post('getAdminList', 'App\Http\Controllers\v1\Weixin\UserController@getAdminList');
 

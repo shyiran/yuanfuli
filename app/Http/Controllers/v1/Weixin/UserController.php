@@ -17,7 +17,7 @@ class UserController extends Controller
     }
 
     //获取第三方应用凭证（suite_access_token）
-    public function getSuiteAccessToken ()
+    private function getSuiteAccessToken ()
     {
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_suite_token";
         $suite_id = "ww89216d45463b353d";
@@ -28,10 +28,9 @@ class UserController extends Controller
     }
 
     //获取预授权码get_pre_auth_code
-    public function getPreAuthCode ()
+    private function getPreAuthCode ($suite_access_token)
     {
-        $s = "qgfZQfKeDI3GMvjIXquh5mEgFokUSNZJ0V6bCqiCs7zQ8DTJfgVVeV9yGC7xY8UF7fA55OMDq9-cRVrbsRNDpqVPyG_1YAQKxmfdr8mEkQOWd11K3_byFVcYg9ThMTU7";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=" . $s;
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=" . $suite_access_token."&debug=1";
         return geturl ($url);
     }
 
@@ -105,15 +104,47 @@ class UserController extends Controller
         }
     }
 
-
+    //这里是入口
     //获取企业授权信息
     public function getAuthInfo ()
     {
-        $SUITE_ACCESS_TOKEN = "sc";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=" . $SUITE_ACCESS_TOKEN;
-        $data = [ "auth_corpid" => "auth_corpid_value", "permanent_code" => "ascsc" ];
+        $s_a_t_info = $this->getSuiteAccessToken();
+        $suite_access_token= $s_a_t_info['suite_access_token'];//第三方应用凭证
+        $p_a_c_info=$this->getPreAuthCode($suite_access_token);
+        $per_auth_code=$p_a_c_info['pre_auth_code'];//预授权码
+
+        return $per_auth_code;
+
+        $permanent_code="";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=" . $suite_access_token;
+        $data = [ "auth_corpid" => "auth_corpid_value", "permanent_code" => $permanent_code ];
         return posturl ($url, $data);
     }
+
+
+    //测试的获取用户链接
+    public function getlll(){
+        $appid="ww89216d45463b353d";
+
+        $corpID="ww0328d5bc6e988741";
+        $id='1';
+        $durl="https://api.lanxx.club/weixin/getlll";
+        $url="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$appid."&redirect_uri=".urlencode($durl)."&response_type=code&scope=snsapi_privateinfo&state=LAXXlanxx#wechat_redirect";
+
+        $urll_1="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$corpID."&redirect_uri=".urlencode($durl)."&response_type=code&scope=snsapi_privateinfo&agentid=".$id."&state=LAXXlanxx#wechat_redirect";
+        //
+
+        //return serialize($_GET());\
+        //
+       // $url_info=$_GET;
+        //$code =$url_info['code'];
+       // $state=$url_info['state'];
+
+       //var_dump($_GET);
+    }
+
+
+
 
     //获取企业凭证get_corp_token
     //auth_corpid  授权方corpid
@@ -129,7 +160,7 @@ class UserController extends Controller
     {
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_permanent_code?suite_access_token=" . $suite_access_token;
         $data = [ "auth_code" => $auth_lin_code];
-        
+
     }
 
 

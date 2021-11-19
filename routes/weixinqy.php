@@ -10,9 +10,9 @@ $api->version ('v1', function ($api) {
         //获取服务商凭证 get_provider_token
         $api->post('getProviderToken', '\App\Http\Controllers\v1\Weixin\UserController@getProviderToken');
         //获取第三方应用凭证（suite_access_token） ??????
-        $api->post('getSuiteAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteAccessToken');
+//      $api->post('getSuiteAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteAccessToken');
         //获取预授权码get_pre_auth_code
-        $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
+//        $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
 
         //获取suite_ticket（suite_ticket）
         $api->post('getSuiteTicket', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteTicket');
@@ -21,25 +21,23 @@ $api->version ('v1', function ($api) {
 
 
 
+
         //获取企业永久授权码
-
         //
-
         //获取预授权码get_pre_auth_code
         $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
-
         //获取企业凭证access_token
 //      $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
-
         //获取企业授权信息
         $api->post('getAuthInfo', 'App\Http\Controllers\v1\Weixin\UserController@getAuthInfo');
         //获取企业凭证get_corp_token
-//        $api->post('getCorpToken', 'App\Http\Controllers\v1\Weixin\UserController@getCorpToken');
+//      $api->post('getCorpToken', 'App\Http\Controllers\v1\Weixin\UserController@getCorpToken');
         //获取应用的管理员列表
         $api->post('getAdminList', 'App\Http\Controllers\v1\Weixin\UserController@getAdminList');
 
 
-
+//测试的获取用户链接
+        $api->get('getlll', 'App\Http\Controllers\v1\Weixin\UserController@getlll');
 
 
 

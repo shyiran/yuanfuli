@@ -30,7 +30,7 @@ class UserController extends Controller
     //获取预授权码get_pre_auth_code
     private function getPreAuthCode ($suite_access_token)
     {
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=" . $suite_access_token."&debug=1";
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=" . $suite_access_token . "&debug=1";
         return geturl ($url);
     }
 
@@ -108,39 +108,49 @@ class UserController extends Controller
     //获取企业授权信息
     public function getAuthInfo ()
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
-        $suite_access_token= $s_a_t_info['suite_access_token'];//第三方应用凭证
-        $p_a_c_info=$this->getPreAuthCode($suite_access_token);
-        $per_auth_code=$p_a_c_info['pre_auth_code'];//预授权码
+        $s_a_t_info = $this->getSuiteAccessToken ();
+        $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
+        $p_a_c_info = $this->getPreAuthCode ($suite_access_token);
+        $per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
 
         return $per_auth_code;
 
-        $permanent_code="";
+        $permanent_code = "";
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=" . $suite_access_token;
         $data = [ "auth_corpid" => "auth_corpid_value", "permanent_code" => $permanent_code ];
         return posturl ($url, $data);
     }
 
+    //获取访问用户身份
+     function getUserInfo3rd ($code)
+    {
+        //$code="uXAm8XPNIlO4JmVyHr4goYipcdDM5NZ-_EC1ECp1TUE";
+        $s_a_t_info = $this->getSuiteAccessToken ();
+        $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/getuserinfo3rd?suite_access_token=".$suite_access_token."&code=" . $code;
+        return geturl ($url);
+    }
 
     //测试的获取用户链接
-    public function getlll(){
-        $appid="ww89216d45463b353d";
+    public function getlll ()
+    {
+        $appid = "ww89216d45463b353d";
+        $corpID = "ww0328d5bc6e988741";
+        $id = '1';
+        $durl = "https://api.lanxx.club/weixin/getlll";
+        $url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $appid . "&redirect_uri=" . urlencode ($durl) . "&response_type=code&scope=snsapi_privateinfo&state=LAXXlanxx#wechat_redirect";
 
-        $corpID="ww0328d5bc6e988741";
-        $id='1';
-        $durl="https://api.lanxx.club/weixin/getlll";
-        $url="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$appid."&redirect_uri=".urlencode($durl)."&response_type=code&scope=snsapi_privateinfo&state=LAXXlanxx#wechat_redirect";
-
-        $urll_1="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$corpID."&redirect_uri=".urlencode($durl)."&response_type=code&scope=snsapi_privateinfo&agentid=".$id."&state=LAXXlanxx#wechat_redirect";
+        $urll_1 = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $corpID . "&redirect_uri=" . urlencode ($durl) . "&response_type=code&scope=snsapi_privateinfo&agentid=" . $id . "&state=LAXXlanxx#wechat_redirect";
         //
-
+        $url_info=$_GET;
+        return $this->getUserInfo3rd($url_info['code']);
         //return serialize($_GET());\
         //
-       // $url_info=$_GET;
+        //
         //$code =$url_info['code'];
-       // $state=$url_info['state'];
+        // $state=$url_info['state'];
 
-       //var_dump($_GET);
+        var_dump($_GET);
     }
 
 
@@ -155,11 +165,12 @@ class UserController extends Controller
         $data = [ "auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code ];
         return posturl ($url, $data);
     }
+
     //获取企业永久授权码
-    private function getPermanentCode ($suite_access_token,$auth_lin_code)
+    private function getPermanentCode ($suite_access_token, $auth_lin_code)
     {
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_permanent_code?suite_access_token=" . $suite_access_token;
-        $data = [ "auth_code" => $auth_lin_code];
+        $data = [ "auth_code" => $auth_lin_code ];
 
     }
 

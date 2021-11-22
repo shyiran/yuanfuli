@@ -41,6 +41,8 @@ $api->version ('v1', function ($api) {
 
 
 
+        $api->get('fff', 'App\Http\Controllers\v1\Weixin\UserController@getUserInfo3rd');
+
         //获取token
         $api->get('getToken', '\App\Http\Controllers\v1\Weixin\UserController@getToken');
         //通讯录管理

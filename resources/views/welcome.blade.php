@@ -16,7 +16,8 @@
             <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
                 <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
                     <a href="https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww89216d45463b353d&redirect_uri=https%3A%2F%2Fapi.lanxx.club%2Fweixin%2Fgetlll&response_type=code&scope=snsapi_privateinfo&state=LAXXlanxx#wechat_redirect"> 我是链接 </a><br><br><br>
-                    <a href="https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww0328d5bc6e988741&redirect_uri=https%3A%2F%2Fapi.lanxx.club%2Fweixin%2Fgetlll&response_type=code&scope=snsapi_privateinfo&agentid=ww89216d45463b353d&state=LAXXlanxx#wechat_redirect">我是链接</a>
+                    <a href="https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww0328d5bc6e988741&redirect_uri=https%3A%2F%2Fapi.lanxx.club%2Fweixin%2Fgetlll&response_type=code&scope=snsapi_privateinfo&agentid=ww89216d45463b353d&state=LAXXlanxx#wechat_redirect">我是链接</a><br><br><br>
+                    <a href="https://docs.qq.com/oauth/v2/authorize?client_id=0b8e321b32084ffda3bb05afdbe6c6e8&redirect_uri=https%3A%2F%2Fapi.lanxx.club%2Ftxdocs%2FuserAuthorize%2Fcallback&response_type=code&scope=all&state=LANXXDOCS">腾讯文档</a>
                 </div>
             </div>
         </div>

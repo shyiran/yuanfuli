@@ -5,15 +5,23 @@
  * DateTime: 2021/10/30 21:53
  */
 $api = app ('Dingo\Api\Routing\Router');
-$api->version ('v1', function ($api) {
-    $api->group ([ 'prefix' => 'weixin' ], function ($api){
-        //获取服务商凭证 get_provider_token
+$api->version ("v1", function ($api) {
+    $api->group ([ "prefix" => "weixin" ], function ($api){
+        //获取服务商凭证 get_provider_token 2小时
         $api->post('getProviderToken', '\App\Http\Controllers\v1\Weixin\UserController@getProviderToken');
+        //获取用户身份信息
+        $api->get('getlll', 'App\Http\Controllers\v1\Weixin\UserController@getlll');
+        //用户授权回调URL userAuthSuccess
+        $api->get('userAuthSuccess', 'App\Http\Controllers\v1\Weixin\UserController@userAuthSuccess');
+
+
+        $api->get('ss', 'App\Http\Controllers\v1\Weixin\UserController@setSessionInfo');
+
+
         //获取第三方应用凭证（suite_access_token） ??????
 //      $api->post('getSuiteAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteAccessToken');
         //获取预授权码get_pre_auth_code
-//        $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
-
+//      $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
         //获取suite_ticket（suite_ticket）
         $api->post('getSuiteTicket', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteTicket');
         //获取getSuiteTicket（suite_ticket）
@@ -36,8 +44,7 @@ $api->version ('v1', function ($api) {
         $api->post('getAdminList', 'App\Http\Controllers\v1\Weixin\UserController@getAdminList');
 
 
-//测试的获取用户链接
-        $api->get('getlll', 'App\Http\Controllers\v1\Weixin\UserController@getlll');
+
 
 
 

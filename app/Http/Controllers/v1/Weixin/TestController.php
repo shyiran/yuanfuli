@@ -7,6 +7,7 @@ use App\Http\Controllers\BaseController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 
+
 class TestController extends BaseController
 {
     public function rr(){
@@ -17,7 +18,7 @@ class TestController extends BaseController
         return $val;
     }
     public function ddd(){
-        $val =  Cache::get('key1');
+        $val = \App\Models\User::getUserInfoByID(2);
         return $val;
     }
     public function a(){

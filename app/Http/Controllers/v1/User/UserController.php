@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
+
 use Illuminate\Http\Request;
 
-class UserController extends Controller
+class UserController extends BaseController
 {
     protected $authenticationAuth;
-    public function __construct(){
-        $this->authenticationAuth="jffj";
+
+    public function __construct ()
+    {
+        $this->authenticationAuth = "jffj";
     }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index ()
     {
         //
     }
@@ -26,7 +30,7 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create ()
     {
         //
     }
@@ -34,10 +38,10 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store (Request $request)
     {
         //
     }
@@ -45,10 +49,10 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show ($id)
     {
         return json_encode ('dddd');
     }
@@ -56,10 +60,10 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit ($id)
     {
         //
     }
@@ -67,11 +71,11 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update (Request $request, $id)
     {
         //
     }
@@ -79,10 +83,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy ($id)
     {
         //
     }

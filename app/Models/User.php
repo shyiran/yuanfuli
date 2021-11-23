@@ -41,4 +41,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+    //根据ID获取用户基本信息
+    public function getUserInfoByID(int $id){
+        return self::find($id);
+    }
+
 }

@@ -13,9 +13,13 @@ $api->version ("v1", function ($api) {
         $api->get('getlll', 'App\Http\Controllers\v1\Weixin\UserController@getlll');
         //用户授权回调URL userAuthSuccess
         $api->get('userAuthSuccess', 'App\Http\Controllers\v1\Weixin\UserController@userAuthSuccess');
+        //扫描登录
+        $api->get('scanningQR', 'App\Http\Controllers\v1\Weixin\UserController@scanningQR');
+        //点击登录一     构造第三方应用oauth2链接
+        $api->get('clickLoginThird', 'App\Http\Controllers\v1\Weixin\UserController@clickLoginThird');
+        //点击登录一     构造企业oauth2链接
+        $api->get('clickLoginOauth', 'App\Http\Controllers\v1\Weixin\UserController@clickLoginOauth');
 
-
-        $api->get('ss', 'App\Http\Controllers\v1\Weixin\UserController@setSessionInfo');
 
 
         //获取第三方应用凭证（suite_access_token） ??????

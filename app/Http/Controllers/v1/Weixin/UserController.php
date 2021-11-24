@@ -50,25 +50,30 @@ class UserController extends Controller
         $data = ["auth_code" => $auth_lin_code];
         return posturl($url, $data);
     }
+    //设置授权配置set_session_info
+    private function setSessionInfo ($suite_access_token,$per_auth_code)
+    {
+        $base_url = env ('QYWX_BASEURL', '');
+        $url = $base_url . "service/set_session_info?suite_access_token=" . $suite_access_token;
+        $data = [ "pre_auth_code" => $per_auth_code, "session_info" => [ "auth_type" => 1 ] ];
+        return posturl ($url, $data);
+    }
 
     //设置授权配置set_session_info
-    function setSessionInfo()
+    public function scanningQR ()
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
+        $s_a_t_info = $this->getSuiteAccessToken ();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-        $p_a_c_info = $this->getPreAuthCode($suite_access_token);
+        $p_a_c_info = $this->getPreAuthCode ($suite_access_token);
         $per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
 
-
-        $base_url = env('QYWX_BASEURL', '');
-        $url = $base_url . "service/set_session_info?suite_access_token=" . $suite_access_token;
-        $data = ["pre_auth_code" => $per_auth_code, "session_info" => ["auth_type" => 1]];
-        $res = posturl($url, $data);
+        $res = $this->setSessionInfo ($suite_access_token,$per_auth_code);
         if ($res['errcode'] == 0) {
             $suite_id = env('SUITEID', '');
             $durl = "api.lanxx.club";
             $state = "LANXXlanxx";
-            return redirect("https://open.work.weixin.qq.com/3rdapp/install?suite_id=" . $suite_id . "&pre_auth_code=" . $per_auth_code . "&redirect_uri=" . urlencode($durl) . "&state=" . $state);
+            $oo="https://open.work.weixin.qq.com/3rdapp/install?suite_id=" . $suite_id . "&pre_auth_code=" . $per_auth_code . "&redirect_uri=" . urlencode($durl) . "&state=" . $state;
+            header("Location: $oo",TRUE,302);
         }
     }
 
@@ -171,20 +176,38 @@ class UserController extends Controller
         // $state=$url_info['state'];
 
         //var_dump($_GET);
+        //https://open.weixin.qq.com/connect/oauth2/authorize?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=SCOPE&state=STATE#wechat_redirect
+        //
+    }
+    //点击登录一     构造第三方应用oauth2链接
+    public function clickLoginThird(){
+        $appid = env('SUITEID', '');
+        $durl = "api.lanxx.club";
+        $state = "LANXXlanxx";
+        $uri="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$appid."&redirect_uri=".$durl."&response_type=code&scope=snsapi_privateinfo&state=".$state."#wechat_redirect";
+        header("Location: $uri",TRUE,302);
+    }
+    //点击登录一     构造企业oauth2链接
+    public function clickLoginOauth(){
+        $corpID = env('CORPID', '');
+        $durl = "api.lanxx.club";
+        $state = "LANXXlanxx";
+        $uri="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$corpID."&redirect_uri=".$durl."&response_type=code&scope=snsapi_base&agentid=AGENTID&state=".$state."#wechat_redirect";
+        header("Location: $uri",TRUE,302);
     }
 
     //展示授权按钮
     public function showPage()
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
-        $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-        $p_a_c_info = $this->getPreAuthCode($suite_access_token);
-        $per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
+        //$s_a_t_info = $this->getSuiteAccessToken();
+       // $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
+        //$p_a_c_info = $this->getPreAuthCode($suite_access_token);
+        //$per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
 
-        $durl = "https://api.lanxx.club";
-        $state = "LANXXlanxx";
-        $data = ['suite_id' => env('SUITEID', ''), 'per_auth_code' => $per_auth_code, 'durl' => urlencode($durl), 'state' => $state];
-        return view('welcome')->with('data', $data);
+       // $durl = "https://api.lanxx.club";
+       // $state = "LANXXlanxx";
+       // $data = ['suite_id' => env('SUITEID', ''), 'per_auth_code' => $per_auth_code, 'durl' => urlencode($durl), 'state' => $state];
+        return view('welcome')->with('data');
     }
 
 

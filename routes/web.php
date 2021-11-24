@@ -12,10 +12,6 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-/*Route::get('/', function () {
-    return view('welcome');
-});*/
 Route::get('/', [\App\Http\Controllers\v1\Weixin\UserController::class, 'showPage']);
 Route::get('/WW_verify_TbyMh9YHNhfm830y.txt', function () {
     return "TbyMh9YHNhfm830y";

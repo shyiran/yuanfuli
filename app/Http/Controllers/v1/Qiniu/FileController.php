@@ -20,6 +20,7 @@ class FileController extends BaseController
     // 创建一个文件（包含路径）create a file
     public function createFile ()
     {
+
         $fileContents=fopen ('C:\Users\shyir\Desktop\简谱\歌唱祖国.jpg', 'r');
         $f=$this->disk->put('avatars/d/n/filename.jpg', $fileContents);
         return $f;

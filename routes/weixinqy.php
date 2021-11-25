@@ -7,14 +7,25 @@
 $api = app ('Dingo\Api\Routing\Router');
 $api->version ("v1", function ($api) {
     $api->group ([ "prefix" => "weixin" ], function ($api){
+        //用户扫描登录并且获取用户身份信息
+        $api->get('userLogin', 'App\Http\Controllers\v1\Weixin\UserController@userLogin');
+
+
+
+
+
         //获取服务商凭证 get_provider_token 2小时
         $api->post('getProviderToken', '\App\Http\Controllers\v1\Weixin\UserController@getProviderToken');
-        //获取用户身份信息
-        $api->get('getlll', 'App\Http\Controllers\v1\Weixin\UserController@getlll');
+
         //用户授权回调URL userAuthSuccess
         $api->get('userAuthSuccess', 'App\Http\Controllers\v1\Weixin\UserController@userAuthSuccess');
         //扫描登录
         $api->get('scanningQR', 'App\Http\Controllers\v1\Weixin\UserController@scanningQR');
+
+
+
+
+
         //点击登录一     构造第三方应用oauth2链接
         $api->get('clickLoginThird', 'App\Http\Controllers\v1\Weixin\UserController@clickLoginThird');
         //点击登录一     构造企业oauth2链接
@@ -39,7 +50,7 @@ $api->version ("v1", function ($api) {
         //获取预授权码get_pre_auth_code
         $api->get('getPreAuthCode', '\App\Http\Controllers\v1\Weixin\UserController@getPreAuthCode');
         //获取企业凭证access_token
-//      $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
+        $api->post('getAccessToken', '\App\Http\Controllers\v1\Weixin\UserController@getAccessToken');
         //获取企业授权信息
         $api->post('getAuthInfo', 'App\Http\Controllers\v1\Weixin\UserController@getAuthInfo');
         //获取企业凭证get_corp_token
@@ -113,8 +124,6 @@ $api->version ("v1", function ($api) {
         //获取打卡人员排班信息
         //为打卡人员排班
         //获取设备打卡数据
-
-
     });
 });
 $api->version ('v2', function ($api) {

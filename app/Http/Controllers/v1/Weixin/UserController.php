@@ -3,11 +3,26 @@
 namespace App\Http\Controllers\v1\Weixin;
 
 use App\Http\Controllers\Controller;
+use App\Models\WxqyAuthCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
+    //用户扫描登录
+    public function userLogin()
+    {
+        $url_info = $_GET;
+        if(!$url_info){
+            return $this->response->["sc"];
+            return $this->response->"ss"=>"ddddddddddd");
+        }
+        $userInfo3rd = $this->getUserInfo3rd($url_info['code']);
+        if(!$userInfo3rd['CorpId']){
+
+        }
+    }
+
 
     //获取服务商凭证 get_provider_token
     public function getProviderToken()
@@ -50,30 +65,33 @@ class UserController extends Controller
         $data = ["auth_code" => $auth_lin_code];
         return posturl($url, $data);
     }
+
     //设置授权配置set_session_info
-    private function setSessionInfo ($suite_access_token,$per_auth_code)
+    private function setSessionInfo($suite_access_token, $per_auth_code)
     {
-        $base_url = env ('QYWX_BASEURL', '');
+        $base_url = env('QYWX_BASEURL', '');
         $url = $base_url . "service/set_session_info?suite_access_token=" . $suite_access_token;
-        $data = [ "pre_auth_code" => $per_auth_code, "session_info" => [ "auth_type" => 1 ] ];
-        return posturl ($url, $data);
+        $data = ["pre_auth_code" => $per_auth_code, "session_info" => ["auth_type" => 1]];
+        return posturl($url, $data);
     }
 
-    //设置授权配置set_session_info
-    public function scanningQR ()
+    //管理员扫描登录
+    public function scanningQR()
     {
-        $s_a_t_info = $this->getSuiteAccessToken ();
+        $s_a_t_info = $this->getSuiteAccessToken();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-        $p_a_c_info = $this->getPreAuthCode ($suite_access_token);
+        $p_a_c_info = $this->getPreAuthCode($suite_access_token);
         $per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
 
-        $res = $this->setSessionInfo ($suite_access_token,$per_auth_code);
+        $res = $this->setSessionInfo($suite_access_token, $per_auth_code);
         if ($res['errcode'] == 0) {
             $suite_id = env('SUITEID', '');
             $durl = "api.lanxx.club";
-            $state = "LANXXlanxx";
-            $oo="https://open.work.weixin.qq.com/3rdapp/install?suite_id=" . $suite_id . "&pre_auth_code=" . $per_auth_code . "&redirect_uri=" . urlencode($durl) . "&state=" . $state;
-            header("Location: $oo",TRUE,302);
+            $state = env('STATE_WORD', '');
+            $url = "https://open.work.weixin.qq.com/3rdapp/install?suite_id=" . $suite_id . "&pre_auth_code=" . $per_auth_code . "&redirect_uri=" . urlencode($durl) . "&state=" . $state;
+            header("Location: $url", TRUE, 302);
+        } else {
+            return "设置授权配置错误";
         }
     }
 
@@ -155,59 +173,59 @@ class UserController extends Controller
         }
     }
 
-    //测试的获取用户链接
-    public function getlll()
-    {
-//        $appid = env('SUITEID', '');                                  //应用id
-//        $corpID = env('CORPID', '');                                  //企业corpid
-//        $id = '1';
-//        $durl = "https://api.lanxx.club/weixin/getlll";
-//        $url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $appid . "&redirect_uri=" . urlencode($durl) . "&response_type=code&scope=snsapi_userinfo&state=LAXXlanxx#wechat_redirect";
 
-        //$urll_1 = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $corpID . "&redirect_uri=" . urlencode ($durl) . "&response_type=code&scope=snsapi_privateinfo&agentid=" . $id . "&state=LAXXlanxx#wechat_redirect";
-        //
-        $url_info = $_GET;
-        return $url_info;
-        return $this->getUserInfo3rd($url_info['code']);
-        //return serialize($_GET());\
-        //
-        //
-        //$code =$url_info['code'];
-        // $state=$url_info['state'];
-
-        //var_dump($_GET);
-        //https://open.weixin.qq.com/connect/oauth2/authorize?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=SCOPE&state=STATE#wechat_redirect
-        //
-    }
     //点击登录一     构造第三方应用oauth2链接
-    public function clickLoginThird(){
+    public function clickLoginThird()
+    {
         $appid = env('SUITEID', '');
         $durl = "api.lanxx.club";
         $state = "LANXXlanxx";
-        $uri="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$appid."&redirect_uri=".$durl."&response_type=code&scope=snsapi_privateinfo&state=".$state."#wechat_redirect";
-        header("Location: $uri",TRUE,302);
+        $uri = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $appid . "&redirect_uri=" . $durl . "&response_type=code&scope=snsapi_privateinfo&state=" . $state . "#wechat_redirect";
+        header("Location: $uri", TRUE, 302);
     }
+
     //点击登录一     构造企业oauth2链接
-    public function clickLoginOauth(){
+    public function clickLoginOauth()
+    {
         $corpID = env('CORPID', '');
         $durl = "api.lanxx.club";
         $state = "LANXXlanxx";
-        $uri="https://open.weixin.qq.com/connect/oauth2/authorize?appid=".$corpID."&redirect_uri=".$durl."&response_type=code&scope=snsapi_base&agentid=AGENTID&state=".$state."#wechat_redirect";
-        header("Location: $uri",TRUE,302);
+        $uri = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $corpID . "&redirect_uri=" . $durl . "&response_type=code&scope=snsapi_base&agentid=AGENTID&state=" . $state . "#wechat_redirect";
+        header("Location: $uri", TRUE, 302);
     }
 
     //展示授权按钮
     public function showPage()
     {
-        //$s_a_t_info = $this->getSuiteAccessToken();
-       // $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-        //$p_a_c_info = $this->getPreAuthCode($suite_access_token);
-        //$per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
+        //判断是否回调
+        $auth_code = $_GET['auth_code'] ?? 0;
+        if ($auth_code) {
+            $s_a_t_info = $this->getSuiteAccessToken();
+            $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
+            //$p_a_c_info = $this->getPreAuthCode($suite_access_token);
+            //$per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
+            //$durl = "https://api.lanxx.club";
+            //$state = "LANXXlanxx";
+            // , 'per_auth_code' => $per_auth_code, 'durl' => urlencode($durl), 'state' => $state
 
-       // $durl = "https://api.lanxx.club";
-       // $state = "LANXXlanxx";
-       // $data = ['suite_id' => env('SUITEID', ''), 'per_auth_code' => $per_auth_code, 'durl' => urlencode($durl), 'state' => $state];
-        return view('welcome')->with('data');
+
+            $url_info = $_GET;
+            $auth_lin_code = $url_info['auth_code'];//临时授权码
+            $data = $this->getPermanentCode($suite_access_token, $auth_lin_code);//获取企业永久授权码
+
+
+            $url_d = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suite_access_token;
+            $data_d = ["auth_corpid" => $data['auth_corp_info']['corpid'], "permanent_code" => $data['permanent_code'], 'suite_access_token' => $suite_access_token];
+            $rrrr = posturl($url_d, $data_d);
+            $data['suite_access_token'] = $rrrr['access_token'];
+            return WxqyAuthCompany::InSertOne($data);//数据保存到本地
+
+
+        } else {
+            $data = ['suite_id' => env('SUITEID', ''), 'state' => env('STATE_WORD', ''), 'agentid' => env('AGENTID', '')];
+            return view('welcome')->with('data', $data);
+        }
+
     }
 
 
@@ -243,19 +261,19 @@ class UserController extends Controller
     {
         $s_a_t_info = $this->getSuiteAccessToken();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-        $p_a_c_info = $this->getPreAuthCode($suite_access_token);
-        $per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
+        //$p_a_c_info = $this->getPreAuthCode($suite_access_token);
+        //$per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
 
-        return $per_auth_code;
-
-        $permanent_code = "";
+        //return $per_auth_code;
+        $auth_corpid = "ww5a8c8cb36455ba7a";
+        $permanent_code = 'ZJoMiXVOYZtjtf1xJGHQ4fQMYRkYlf1IGhmOHB1GNxn2sDqnVztHgRofHe5qCnK0zlfM-QIuTUg-TgQZj_Z5vr_l9QwZDBtvb1IMZi7cPcxxEYkLwJtJfTMo-WksJX9zSuvpvu_pIdw4Rq4lg041ugCruVZa2YDnDFIAJRkF4aXhmPH4vNo-f0ZJgAcPk_HQ0qbAwKdSGZ09e_T63cDlIw';
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=" . $suite_access_token;
-        $data = ["auth_corpid" => "auth_corpid_value", "permanent_code" => $permanent_code];
+        $data = ["auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code];
         return posturl($url, $data);
     }
 
     //获取访问用户身份
-    function getUserInfo3rd($code)
+    private function getUserInfo3rd($code)
     {
         //$code="uXAm8XPNIlO4JmVyHr4goYipcdDM5NZ-_EC1ECp1TUE";
         $s_a_t_info = $this->getSuiteAccessToken();
@@ -278,12 +296,15 @@ class UserController extends Controller
     //获取企业凭证access_token
     public function getAccessToken()
     {
-        $suiteAccessToken = "ssssssss";
-        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suiteAccessToken;
-        $auth_corpid = "scs";
-        $permanent_code = "ssssssssssss";
-        $data = ["auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code];
+        $s_a_t_info = $this->getSuiteAccessToken();
+        $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
 
+        $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suite_access_token;
+
+        $auth_corpid = "ww5a8c8cb36455ba7a";
+        $permanent_code = "Y13ZfuEDRpNbw3Ee7dk1zwzSlbGfxIqWkHp6fNhrAOyd7ZLLJgwNQgW3HwST_i0bA8XwBCvnCGo9FbF-fp1GwP1vRiE9fC5J8rEyvwDUqE5K9yokI2jSQWW1K1KPbcwCyRH933UaeJVGV8pJOwtQ6ORumTEjbC_Gu2pRs4CqTtlFREBAQ21GkEgiXDMy_hmMfn7pPCsLD-WighpaIrEqqA";
+        $data = ["auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code, 'suite_access_token' => $suite_access_token];
+        return posturl($url, $data);
     }
 
     //获取Token

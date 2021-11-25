@@ -29,8 +29,6 @@ $api->version ('v1', function ($api) {
         $api->get('getfileUpLoadToken', '\App\Http\Controllers\v1\Qiniu\FileController@getfileUpLoadToken');
         // get private url
         $api->get('getPrivateUrl', '\App\Http\Controllers\v1\Qiniu\FileController@getPrivateUrl');
-
-
         // get private url
         $api->get('getList', '\App\Http\Controllers\v1\Qiniu\FileController@getList');
     });

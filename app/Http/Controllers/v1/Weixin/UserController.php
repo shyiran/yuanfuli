@@ -2,24 +2,100 @@
 
 namespace App\Http\Controllers\v1\Weixin;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 use App\Models\WxqyAuthCompany;
+use App\Models\User;
+use App\Models\WxqyAuthGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-class UserController extends Controller
+class UserController extends BaseController
 {
     //用户扫描登录
-    public function userLogin()
+    public function userLogin(Request $request)
     {
         $url_info = $_GET;
-        if(!$url_info){
-            return $this->response->["sc"];
-            return $this->response->"ss"=>"ddddddddddd");
-        }
-        $userInfo3rd = $this->getUserInfo3rd($url_info['code']);
-        if(!$userInfo3rd['CorpId']){
+        if (!$url_info) {
+            /*  $user = User::getUserInfoByID('2');
+              //return $user;
+           if(!$this_userinfo = User::getUserInfoByOpenUseId('scscsc')){
+               User::create([
+                   'email'=>"asc@lanxx.club",
+                   'user_status'=>'1',
+                   'open_userid' => '24bffbgfngn',
+                   'nickname'=>'昵称',
+                   'last_login_time'=>time(),
+                   'last_login_ip' => $request->getClientIp(),
+                   'create_ip' => $request->getClientIp(),
+                   'password'=>md5(env('USER_DEF1AULT_PSW', 'LANXX123lanxx'))
+               ]);
+           }*/
+            //return $this->response->error('你不属于任何企业，请加入一个企业后再进行操作.', 404);
+            // return $this->response->json(["ss"=>"sscscsc"]);
+            //$data["username"]="test001@qq.com";
+            //$data["password"]="123456";
+            //$res_dl= posturl('http://test.lanxx.club/api/v1/user/login',$data);
+            //return $res_dl['data']['token'];
+            //return $res_dl['code'];
+            //检查企业信息是否存在
+            //$thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID('ww5a8c8cb36455ba7a', 'c_corp_industry');
+            //$add_data['auth_corp_info']['corpid'] = "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS";
+            //return WxqyAuthCompany::InSertOne($add_data);
+            //return $thisAuthompany;
+            //检查权限组是否存在
+            $thisAuthGroup=WxqyAuthGroup::getAuthGroupInfoByCorpID("ww5a8c8cb36455ba7a");
+            if(!count($thisAuthGroup)){
+               return WxqyAuthGroup::InSertOne(array("corpid"=>"1", "is_system"=>"1", "group_name"=>"scscsc", "rules"=>"最少"));
+            }else{
+                return "DDDDDDDD";
+            }
+            return $thisAuthGroup;
+        } else {
+            $userInfo3rd = $this->getUserInfo3rd($url_info['code']);
+            if (!$userInfo3rd['CorpId']) {
+                return $this->response->error('你不属于任何企业，请加入一个企业后再进行操作.', 900);
+            } else {
+                //检查用户信息
+                $thisUserinfo = User::getUserInfoByOpenUseId($userInfo3rd['open_userid']);
+                //默认用户邮箱
+                $def_email = $userInfo3rd['open_userid'] . "@lanxx.club";
+                //如果用户不存在，则添加
+                if (!$thisUserinfo) {
+                    User::create([
+                        'email' => $def_email,
+                        'user_status' => '1',
+                        'open_userid' => $userInfo3rd['open_userid'],
+                        'nickname' => $userInfo3rd['UserId'],
+                        'last_login_time' => time(),
+                        'last_login_ip' => $request->getClientIp(),
+                        'create_ip' => $request->getClientIp(),
+                        'password' => md5(env('USER_DEFAULT_PSW', 'LANXX123lanxx'))
+                    ]);
+                }
+                //检查企业信息是否存在
+                $thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID($userInfo3rd['CorpId']);
+                if (!$thisAuthompany) {
+                    $add_data['auth_corp_info']['corpid'] = $userInfo3rd['CorpId'];
+                    WxqyAuthCompany::InSertOne($add_data);
+                }
+                //检查权限组是否存在
+                $thisAuthGroup=WxqyAuthGroup::getAuthGroupInfoByCorpID($userInfo3rd['CorpId']);
+                if(!count($thisAuthGroup)){
+                    //添加公关总监权限组
+                    WxqyAuthGroup::InSertOne(array("corpid"=>$userInfo3rd['CorpId'], "is_system"=>"1", "group_name"=>"管理员", "rules"=>"最少"));//TODO
+                    //添加普通公关组PR
+                    WxqyAuthGroup::InSertOne(array("corpid"=>$userInfo3rd['CorpId'], "is_system"=>"1", "group_name"=>"公关", "rules"=>"最少"));//TODO
+                }
 
+            }
+            //模拟用户登录
+            $res_dl = posturl('http://test.lanxx.club/api/v1/user/login', array('username' => $def_email, 'password' => env('USER_DEFAULT_PSW')));
+            if ($res_dl['code'] == 1) {
+                //return  redirect("http://test.lanxx.club");
+                //$qq_cs=array ( "Content-type:application/json;", "Accept:application/json", "token:{$res_dl['data']['token']}");
+                //geturl("http://test.lanxx.club",$qq_cs);
+                header("Location: http://test.lanxx.club", TRUE, 302);
+            }
         }
     }
 
@@ -129,13 +205,12 @@ class UserController extends Controller
             $errCode = $wxcpt->VerifyURL($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sVerifyEchoStr, $sEchoStr);
             if ($errCode == 0) {
                 // 验证URL成功，将sEchoStr返回
-                file_put_contents($file2, $sEchoStr . "\n", FILE_APPEND);
+                file_put_contents($file2, "返回时间:" . date('Y-m-d H:i:s') . "sEchoStr值:" . $sEchoStr . "\n", FILE_APPEND);
                 Cache::put('SECHOSTR', $sEchoStr, 1200);
                 echo $sEchoStr;
                 exit;
             } else {
-                file_put_contents($file4, "二次错误" . $sEchoStr . "\n", FILE_APPEND);
-                print("ERR: " . $errCode . "\n");
+                file_put_contents($file4, "二次验证错误，时间:" . date('Y-m-d H:i:s') . "sEchoStr值:" . $sEchoStr . ",错误编码:" . $errCode . "\n", FILE_APPEND);
             }
         }
         $sReqData = file_get_contents('php://input');
@@ -152,7 +227,7 @@ class UserController extends Controller
         $sMsg = '';  // 解析之后的明文
         $err_code = $wxcpt->DecryptMsg($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sReqData, $sMsg);
         $xmls = simplexml_load_string($sMsg, 'SimpleXMLElement', LIBXML_NOCDATA); //  xml格式转成对象
-        file_put_contents($file5, "这是解密后的内容" . $sMsg . "\n", FILE_APPEND);
+        file_put_contents($file5, "时间：" . date('Y-m-d H:i:s') . ",这是解密后的内容：" . $sMsg . "\n", FILE_APPEND);
         if ($err_code == 0) {
             switch ($xmls->InfoType) {
                 case 'suite_ticket'://推送suite_ticket协议每十分钟微信推送一次
@@ -169,7 +244,7 @@ class UserController extends Controller
                     break;
             }
         } else {
-            file_put_contents($file4, $err_code . "\n", FILE_APPEND);
+            file_put_contents($file4, "首次验证错误，时间:" . date('Y-m-d H:i:s') . ",错误编码:" . $err_code . "\n", FILE_APPEND);
         }
     }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\BaseController;
 use App\Models\WxqyAuthCompany;
 use App\Models\User;
 use App\Models\WxqyAuthGroup;
+use App\Models\WxqyUsersCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -16,19 +17,22 @@ class UserController extends BaseController
     {
         $url_info = $_GET;
         if (!$url_info) {
+            /*$hhhhhh = User::insertGetId([
+                'email' => "asc@lanxx.club",
+                'user_status' => '1',
+                'open_userid' => '24bffbgfngn',
+                'nickname' => '昵称',
+                'last_login_time' => time(),
+                'last_login_ip' => $request->getClientIp(),
+                'create_ip' => $request->getClientIp(),
+                'password' => md5(env('USER_DEF1AULT_PSW', 'LANXX123lanxx'))
+            ]);
+
+            return $hhhhhh;*/
             /*  $user = User::getUserInfoByID('2');
               //return $user;
            if(!$this_userinfo = User::getUserInfoByOpenUseId('scscsc')){
-               User::create([
-                   'email'=>"asc@lanxx.club",
-                   'user_status'=>'1',
-                   'open_userid' => '24bffbgfngn',
-                   'nickname'=>'昵称',
-                   'last_login_time'=>time(),
-                   'last_login_ip' => $request->getClientIp(),
-                   'create_ip' => $request->getClientIp(),
-                   'password'=>md5(env('USER_DEF1AULT_PSW', 'LANXX123lanxx'))
-               ]);
+
            }*/
             //return $this->response->error('你不属于任何企业，请加入一个企业后再进行操作.', 404);
             // return $this->response->json(["ss"=>"sscscsc"]);
@@ -43,25 +47,33 @@ class UserController extends BaseController
             //return WxqyAuthCompany::InSertOne($add_data);
             //return $thisAuthompany;
             //检查权限组是否存在
-            $thisAuthGroup=WxqyAuthGroup::getAuthGroupInfoByCorpID("ww5a8c8cb36455ba7a");
-            if(!count($thisAuthGroup)){
-               return WxqyAuthGroup::InSertOne(array("corpid"=>"1", "is_system"=>"1", "group_name"=>"scscsc", "rules"=>"最少"));
-            }else{
-                return "DDDDDDDD";
-            }
-            return $thisAuthGroup;
+            // $thisAuthGroup = WxqyAuthGroup::getAuthGroupInfoByCorpID("ww5a8c8cb36455ba7a");
+            //if (!count($thisAuthGroup)) {
+            // WxqyAuthGroup::InSertOne(array("corpid" => "1", "is_system" => "1", "group_name" => "scscsc", "rules" => "最少"));
+            // } else {
+            //     return "DDDDDDDD";
+            // }
+            // return $thisAuthGroup;
+            $thisGroupId = WxqyUsersCompany::getUsersWithCompany('ww66372d7b5a8e2455', '37');
+            return $thisGroupId;
         } else {
             $userInfo3rd = $this->getUserInfo3rd($url_info['code']);
             if (!$userInfo3rd['CorpId']) {
                 return $this->response->error('你不属于任何企业，请加入一个企业后再进行操作.', 900);
             } else {
-                //检查用户信息
+                //检查用户信息在USER表是否已经存在
                 $thisUserinfo = User::getUserInfoByOpenUseId($userInfo3rd['open_userid']);
-                //默认用户邮箱
                 $def_email = $userInfo3rd['open_userid'] . "@lanxx.club";
                 //如果用户不存在，则添加
                 if (!$thisUserinfo) {
-                    User::create([
+                    //获取用户详细信息，仅多了性别，头像
+                    $userdetail3rd = $this->getuserdetail3rd($userInfo3rd['user_ticket']);
+                    //默认用户邮箱
+
+                    //返回用户ID
+                    $user_id = User::insertGetId([
+                        'sex' => $userdetail3rd['gender'],
+                        'avatar' => $userdetail3rd['avatar'],
                         'email' => $def_email,
                         'user_status' => '1',
                         'open_userid' => $userInfo3rd['open_userid'],
@@ -71,30 +83,36 @@ class UserController extends BaseController
                         'create_ip' => $request->getClientIp(),
                         'password' => md5(env('USER_DEFAULT_PSW', 'LANXX123lanxx'))
                     ]);
+                    //检查该企业信息是否存在
+                    $thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID($userInfo3rd['CorpId']);
+                    if (!$thisAuthompany) {
+                        $add_data['auth_corp_info']['corpid'] = $userInfo3rd['CorpId'];
+                        WxqyAuthCompany::InSertOne($add_data);
+                    }
+                    //检查该企业的权限组是否存在
+                    $thisAuthGroup = WxqyAuthGroup::getAuthGroupInfoByCorpID($userInfo3rd['CorpId']);
+                    $groupID = '';
+                    if (!count($thisAuthGroup)) {
+                        //添加公关总监权限组
+                        WxqyAuthGroup::InSertOne(array("corpid" => $userInfo3rd['CorpId'], "is_system" => "1", "group_name" => "管理员", "rules" => "最少"));//TODO
+                        //添加普通公关组PR
+                        $groupID = WxqyAuthGroup::InSertOne(array("corpid" => $userInfo3rd['CorpId'], "is_system" => "1", "group_name" => "公关", "rules" => "最少"));//TODO
+                    }
+                    //添加用户和权限组的关系
+                    $thisGroupId = WxqyUsersCompany::getUsersWithCompany($userInfo3rd['CorpId'], $user_id);
+                    if (!$thisGroupId && $groupID) {
+                        WxqyUsersCompany::InSertOne(array('corpid' => $userInfo3rd['CorpId'], 'group_id' => $groupID, 'user_id' => $user_id));
+                    }
                 }
-                //检查企业信息是否存在
-                $thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID($userInfo3rd['CorpId']);
-                if (!$thisAuthompany) {
-                    $add_data['auth_corp_info']['corpid'] = $userInfo3rd['CorpId'];
-                    WxqyAuthCompany::InSertOne($add_data);
-                }
-                //检查权限组是否存在
-                $thisAuthGroup=WxqyAuthGroup::getAuthGroupInfoByCorpID($userInfo3rd['CorpId']);
-                if(!count($thisAuthGroup)){
-                    //添加公关总监权限组
-                    WxqyAuthGroup::InSertOne(array("corpid"=>$userInfo3rd['CorpId'], "is_system"=>"1", "group_name"=>"管理员", "rules"=>"最少"));//TODO
-                    //添加普通公关组PR
-                    WxqyAuthGroup::InSertOne(array("corpid"=>$userInfo3rd['CorpId'], "is_system"=>"1", "group_name"=>"公关", "rules"=>"最少"));//TODO
-                }
-
             }
             //模拟用户登录
             $res_dl = posturl('http://test.lanxx.club/api/v1/user/login', array('username' => $def_email, 'password' => env('USER_DEFAULT_PSW')));
+            //return $res_dl;
             if ($res_dl['code'] == 1) {
-                //return  redirect("http://test.lanxx.club");
-                //$qq_cs=array ( "Content-type:application/json;", "Accept:application/json", "token:{$res_dl['data']['token']}");
-                //geturl("http://test.lanxx.club",$qq_cs);
-                header("Location: http://test.lanxx.club", TRUE, 302);
+            //return  redirect("http://test.lanxx.club");
+            //$qq_cs=array ( "Content-type:application/json;", "Accept:application/json", "token:{$res_dl['data']['token']}");
+            //geturl("http://test.lanxx.club",$qq_cs);
+                header("Location: http://test.lanxx.club?token={$res_dl['data']['token']}", TRUE, 302);
             }
         }
     }
@@ -350,11 +368,21 @@ class UserController extends BaseController
     //获取访问用户身份
     private function getUserInfo3rd($code)
     {
-        //$code="uXAm8XPNIlO4JmVyHr4goYipcdDM5NZ-_EC1ECp1TUE";
         $s_a_t_info = $this->getSuiteAccessToken();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/getuserinfo3rd?suite_access_token=" . $suite_access_token . "&code=" . $code;
         return geturl($url);
+    }
+
+    //获取访问用户敏感信息
+    private function getuserdetail3rd($user_ticket)
+    {
+        $base_url = env('QYWX_BASEURL', '');
+        $s_a_t_info = $this->getSuiteAccessToken();
+        $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
+        $url = $base_url . "service/getuserdetail3rd?suite_access_token=" . $suite_access_token;
+        $data = ["user_ticket" => $user_ticket];
+        return posturl($url, $data);
     }
 
 

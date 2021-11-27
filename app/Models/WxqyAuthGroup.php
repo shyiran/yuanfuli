@@ -19,7 +19,14 @@ class WxqyAuthGroup extends Model
         'rules'
     ];
 
-    //根据corpid查询企业权限组信息，默认每个企业最少有2个权限组，一个是最高权限，一个是最低权限
+    //获取默认权限组ID
+    public static function getDefaultGroupID($corpid, $defaultName = '公关')
+    {
+        $data = self::where(['corpid'=>$corpid,'group_name'=>$defaultName])->orderby('id', 'DESC')->first();
+        return $data['id'];
+    }
+
+    //根据corpid查询企业权限组信息，默认每个企业最少有2个权限组，一个是最高权限(管理员)，一个是最低权限(公关)
     public static function getAuthGroupInfoByCorpID($corpid)
     {
         $data = self::where('corpid', $corpid)->orderby('id', 'DESC')->get();
@@ -41,8 +48,8 @@ class WxqyAuthGroup extends Model
         if (isset($data['rules'])) {
             $add_data['rules'] = $data['rules'];
         }
-        if($add_data){
-            self::create($add_data);//返回插入数据，含ID
+        if ($add_data) {
+            return self::insertGetId($add_data);//返回插入ID
         }
     }
 }

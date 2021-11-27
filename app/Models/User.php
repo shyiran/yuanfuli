@@ -21,6 +21,7 @@ class User extends Authenticatable
      * @var string[]
      */
     protected $fillable = [
+        'avatar',
         'create_ip',
         'last_login_ip',
         'nickname',
@@ -59,5 +60,6 @@ class User extends Authenticatable
     public static function getUserInfoByOpenUseId(string $open_userid){
         return self::where('open_userid', $open_userid)->first();
     }
+
 
 }

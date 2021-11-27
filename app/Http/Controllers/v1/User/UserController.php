@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\User;
+namespace App\Http\Controllers\v1\User;
 
 use App\Http\Controllers\BaseController;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends BaseController
@@ -89,5 +90,13 @@ class UserController extends BaseController
     public function destroy ($id)
     {
         //
+    }
+    //获取用户基本身份
+    public function getBaseInfo(){
+        return User::getUserInfoByID('38');
+    }
+    //获取用户菜单
+    public function getMenuInfo(){
+
     }
 }

@@ -117,7 +117,7 @@ $api->version ("v1", function ($api) {
         //OA部分
         //打卡
         //获取员工打卡规则
-        $api->get('getCheckRoute', '\App\Http\Controllers\Weixin\OaController@getCheckRoute');
+        $api->get('getCheckRoute', '\App\Http\Controllers\v1\Weixin\OaController@getCheckRoute');
         //获取打卡记录数据
         //获取打卡日报数据
         //获取打卡月报数据

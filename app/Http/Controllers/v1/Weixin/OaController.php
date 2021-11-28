@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Weixin;
+namespace App\Http\Controllers\v1\Weixin;
+
 
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;

@@ -53,7 +53,7 @@ class UserController extends BaseController
             // } else {
             //     return "DDDDDDDD";
             // }
-            // return $thisAuthGroup;
+            //return $thisAuthGroup;
             $thisGroupId = WxqyUsersCompany::getUsersWithCompany('ww66372d7b5a8e2455', '37');
             return $thisGroupId;
         } else {
@@ -67,13 +67,26 @@ class UserController extends BaseController
                 //如果用户不存在，则添加
                 if (!$thisUserinfo) {
                     //获取用户详细信息，仅多了性别，头像
-                    $userdetail3rd = $this->getuserdetail3rd($userInfo3rd['user_ticket']);
+                    if(isset($userInfo3rd['user_ticket'])){
+                        $userdetail3rd = $this->getuserdetail3rd($userInfo3rd['user_ticket']);
+                    }else{
+                        $userdetail3rd=array();
+                    }
+                    if(count($userdetail3rd)){
+                        $gender = $userdetail3rd['gender'];
+                    }else{
+                        $gender = 0;
+                    }
+                    if(count($userdetail3rd)){
+                        $avatar=$userdetail3rd['avatar'];
+                    }else{
+                        $avatar='';
+                    }
                     //默认用户邮箱
-
                     //返回用户ID
                     $user_id = User::insertGetId([
-                        'sex' => $userdetail3rd['gender'],
-                        'avatar' => $userdetail3rd['avatar'],
+                        'sex' => $gender,
+                        'avatar' => $avatar,
                         'email' => $def_email,
                         'user_status' => '1',
                         'open_userid' => $userInfo3rd['open_userid'],

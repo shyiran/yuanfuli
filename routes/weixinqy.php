@@ -42,7 +42,8 @@ $api->version ("v1", function ($api) {
         //获取getSuiteTicket（suite_ticket）
         $api->get('getSuiteTicket', '\App\Http\Controllers\v1\Weixin\UserController@getSuiteTicket');
 
-
+        //sssss
+        $api->get('lxx', 'App\Http\Controllers\v1\Weixin\UserController@lxx');
 
 
         //获取企业永久授权码

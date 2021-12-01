@@ -12,211 +12,194 @@ use Illuminate\Support\Facades\Cache;
 
 class UserController extends BaseController
 {
+    //插入企业信息
+    private function insertCompanyInfo ($corpid, $companyInfo = [])
+    {
+        $thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID ($corpid);
+        if (!$thisAuthompany && !count ($companyInfo)) {
+            $add_data['auth_corp_info']['corpid'] = $corpid;
+            WxqyAuthCompany::InSertOne ($add_data);
+        } else {
+            WxqyAuthCompany::InSertOne ($companyInfo);
+        }
+    }
+
+    //插入权限组,并将用户归入合适的权限组
+    private function insertAuthGroup ($corpid, $user_id, $is_admin = 0)
+    {
+        $thisAuthGroup = WxqyAuthGroup::getAuthGroupInfoByCorpID ($corpid);
+        $gl_groupID = '';//管理权限组ID
+        $gg_groupID = '';//公关权限组ID
+        if (!count ($thisAuthGroup)) {
+            //添加公关总监权限组
+            $gl_groupID = WxqyAuthGroup::InSertOne (array ( "corpid" => $corpid, "is_system" => "1", "group_name" => "管理员", "rules" => "最少" ));//TODO
+            //添加普通公关组PR
+            $gg_groupID = WxqyAuthGroup::InSertOne (array ( "corpid" => $corpid, "is_system" => "1", "group_name" => "公关", "rules" => "最少" ));//TODO
+        }
+        //添加用户和权限组的关系
+        $thisGroupId = WxqyUsersCompany::getUsersWithCompany ($corpid, $user_id);
+        if (!$thisGroupId && $gg_groupID && !$is_admin) {
+            WxqyUsersCompany::InSertOne (array ( 'corpid' => $corpid, 'group_id' => $gg_groupID, 'user_id' => $user_id ));
+        }
+        if (!$thisGroupId && $gl_groupID && $is_admin) {
+            WxqyUsersCompany::InSertOne (array ( 'corpid' => $corpid, 'group_id' => $gl_groupID, 'user_id' => $user_id ));
+        }
+    }
+
+    //插入用户信息
+    private function insertUserInfo ($open_userid, $request, $user_ticket='')
+    {
+        //检查用户信息在USER表是否已经存在
+        $thisUserinfo = User::getUserInfoByOpenUseId ($open_userid);
+        $def_email = $open_userid . "@lanxx.club";//默认用户邮箱
+        //如果用户不存在，则添加
+        if (!$thisUserinfo) {
+            //获取用户详细信息，仅多了性别，头像
+            if (isset($user_ticket)) {
+                $userdetail3rd = $this->getuserdetail3rd ($user_ticket);
+            } else {
+                $userdetail3rd = array ();
+            }
+            if (isset ($userdetail3rd['gender'])) {
+                $gender = $userdetail3rd['gender'];
+            } else {
+                $gender = 0;
+            }
+            if (isset ($userdetail3rd['avatar'])) {
+                $avatar = $userdetail3rd['avatar'];
+            } else {
+                $avatar = '';
+            }
+            //返回用户ID
+            return User::insertGetId ([
+                'sex' => $gender,
+                'avatar' => $avatar,
+                'email' => $def_email,
+                'user_status' => '1',
+                'open_userid' => $open_userid,
+                'nickname' => $open_userid,
+                'last_login_time' => time (),
+                'last_login_ip' => $request->getClientIp (),
+                'create_ip' => $request->getClientIp (),
+                'password' => md5 (env ('USER_DEFAULT_PSW', 'LANXX123lanxx'))
+            ]);
+        }
+    }
+
     //用户扫描登录
-    public function userLogin(Request $request)
+    public function userLogin (Request $request)
     {
         $url_info = $_GET;
-        if (!$url_info) {
-            /*$hhhhhh = User::insertGetId([
-                'email' => "asc@lanxx.club",
-                'user_status' => '1',
-                'open_userid' => '24bffbgfngn',
-                'nickname' => '昵称',
-                'last_login_time' => time(),
-                'last_login_ip' => $request->getClientIp(),
-                'create_ip' => $request->getClientIp(),
-                'password' => md5(env('USER_DEF1AULT_PSW', 'LANXX123lanxx'))
-            ]);
-
-            return $hhhhhh;*/
-            /*  $user = User::getUserInfoByID('2');
-              //return $user;
-           if(!$this_userinfo = User::getUserInfoByOpenUseId('scscsc')){
-
-           }*/
-            //return $this->response->error('你不属于任何企业，请加入一个企业后再进行操作.', 404);
-            // return $this->response->json(["ss"=>"sscscsc"]);
-            //$data["username"]="test001@qq.com";
-            //$data["password"]="123456";
-            //$res_dl= posturl('http://test.lanxx.club/api/v1/user/login',$data);
-            //return $res_dl['data']['token'];
-            //return $res_dl['code'];
-            //检查企业信息是否存在
-            //$thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID('ww5a8c8cb36455ba7a', 'c_corp_industry');
-            //$add_data['auth_corp_info']['corpid'] = "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS";
-            //return WxqyAuthCompany::InSertOne($add_data);
-            //return $thisAuthompany;
-            //检查权限组是否存在
-            // $thisAuthGroup = WxqyAuthGroup::getAuthGroupInfoByCorpID("ww5a8c8cb36455ba7a");
-            //if (!count($thisAuthGroup)) {
-            // WxqyAuthGroup::InSertOne(array("corpid" => "1", "is_system" => "1", "group_name" => "scscsc", "rules" => "最少"));
-            // } else {
-            //     return "DDDDDDDD";
-            // }
-            //return $thisAuthGroup;
-            $thisGroupId = WxqyUsersCompany::getUsersWithCompany('ww66372d7b5a8e2455', '37');
-            return $thisGroupId;
-        } else {
-            $userInfo3rd = $this->getUserInfo3rd($url_info['code']);
+        if ($url_info) {
+            $userInfo3rd = $this->getUserInfo3rd ($url_info['code']);
             if (!$userInfo3rd['CorpId']) {
-                return $this->response->error('你不属于任何企业，请加入一个企业后再进行操作.', 900);
+                return $this->response->error ('你不属于任何企业，请加入一个企业后再进行操作.', 900);
             } else {
-                //检查用户信息在USER表是否已经存在
-                $thisUserinfo = User::getUserInfoByOpenUseId($userInfo3rd['open_userid']);
-                $def_email = $userInfo3rd['open_userid'] . "@lanxx.club";
-                //如果用户不存在，则添加
-                if (!$thisUserinfo) {
-                    //获取用户详细信息，仅多了性别，头像
-                    if(isset($userInfo3rd['user_ticket'])){
-                        $userdetail3rd = $this->getuserdetail3rd($userInfo3rd['user_ticket']);
-                    }else{
-                        $userdetail3rd=array();
-                    }
-                    if(count($userdetail3rd)){
-                        $gender = $userdetail3rd['gender'];
-                    }else{
-                        $gender = 0;
-                    }
-                    if(count($userdetail3rd)){
-                        $avatar=$userdetail3rd['avatar'];
-                    }else{
-                        $avatar='';
-                    }
-                    //默认用户邮箱
-                    //返回用户ID
-                    $user_id = User::insertGetId([
-                        'sex' => $gender,
-                        'avatar' => $avatar,
-                        'email' => $def_email,
-                        'user_status' => '1',
-                        'open_userid' => $userInfo3rd['open_userid'],
-                        'nickname' => $userInfo3rd['UserId'],
-                        'last_login_time' => time(),
-                        'last_login_ip' => $request->getClientIp(),
-                        'create_ip' => $request->getClientIp(),
-                        'password' => md5(env('USER_DEFAULT_PSW', 'LANXX123lanxx'))
-                    ]);
-                    //检查该企业信息是否存在
-                    $thisAuthompany = WxqyAuthCompany::getCompanyInfoByCorpID($userInfo3rd['CorpId']);
-                    if (!$thisAuthompany) {
-                        $add_data['auth_corp_info']['corpid'] = $userInfo3rd['CorpId'];
-                        WxqyAuthCompany::InSertOne($add_data);
-                    }
-                    //检查该企业的权限组是否存在
-                    $thisAuthGroup = WxqyAuthGroup::getAuthGroupInfoByCorpID($userInfo3rd['CorpId']);
-                    $groupID = '';
-                    if (!count($thisAuthGroup)) {
-                        //添加公关总监权限组
-                        WxqyAuthGroup::InSertOne(array("corpid" => $userInfo3rd['CorpId'], "is_system" => "1", "group_name" => "管理员", "rules" => "最少"));//TODO
-                        //添加普通公关组PR
-                        $groupID = WxqyAuthGroup::InSertOne(array("corpid" => $userInfo3rd['CorpId'], "is_system" => "1", "group_name" => "公关", "rules" => "最少"));//TODO
-                    }
-                    //添加用户和权限组的关系
-                    $thisGroupId = WxqyUsersCompany::getUsersWithCompany($userInfo3rd['CorpId'], $user_id);
-                    if (!$thisGroupId && $groupID) {
-                        WxqyUsersCompany::InSertOne(array('corpid' => $userInfo3rd['CorpId'], 'group_id' => $groupID, 'user_id' => $user_id));
-                    }
-                }
+                //插入用户信息
+                $user_id = $this->insertUserInfo ($userInfo3rd['open_userid'], $request, $userInfo3rd['user_ticket']);
+                //插入企业信息
+                $this->insertCompanyInfo ($userInfo3rd['CorpId']);
+                //插入权限组和分配权限
+                $this->insertAuthGroup ($userInfo3rd['CorpId'], $user_id);
             }
             //模拟用户登录
-            $res_dl = posturl('http://test.lanxx.club/api/v1/user/login', array('username' => $def_email, 'password' => env('USER_DEFAULT_PSW')));
-            //return $res_dl;
+            $res_dl = posturl ('http://test.lanxx.club/api/v1/user/login', array ( 'username' => $userInfo3rd['open_userid'] . "@lanxx.club", 'password' => env ('USER_DEFAULT_PSW') ));
             if ($res_dl['code'] == 1) {
-            //return  redirect("http://test.lanxx.club");
-            //$qq_cs=array ( "Content-type:application/json;", "Accept:application/json", "token:{$res_dl['data']['token']}");
-            //geturl("http://test.lanxx.club",$qq_cs);
-                header("Location: http://test.lanxx.club?token={$res_dl['data']['token']}", TRUE, 302);
+                header ("Location: http://test.lanxx.club?token={$res_dl['data']['token']}", TRUE, 302);
             }
+        } else {
+            return $this->response->error ('未知错误', 900);
         }
     }
 
 
     //获取服务商凭证 get_provider_token
-    public function getProviderToken()
+    public function getProviderToken ()
     {
-        $base_url = env('QYWX_BASEURL', '');
+        $base_url = env ('QYWX_BASEURL', '');
         $url = $base_url . "service/get_provider_token";
-        $corpId = env('CORPID', '');
-        $provider_secret = env('PROVIDER_SECRET', '');
-        $data = ["corpid" => $corpId, "provider_secret" => $provider_secret];
-        return posturl($url, $data);
+        $corpId = env ('CORPID', '');
+        $provider_secret = env ('PROVIDER_SECRET', '');
+        $data = [ "corpid" => $corpId, "provider_secret" => $provider_secret ];
+        return posturl ($url, $data);
     }
 
     //获取第三方应用凭证（suite_access_token）
-    private function getSuiteAccessToken()
+    private function getSuiteAccessToken ()
     {
-        $base_url = env('QYWX_BASEURL', '');
+        $base_url = env ('QYWX_BASEURL', '');
         $url = $base_url . "service/get_suite_token";
-        $suite_id = env('SUITEID', '');                            //应用id
-        $suite_secret = env('SUITE_SECRET', '');                  //应用密码
-        $suite_ticket = Cache::get('SUITEICKET');
-        $data = ["suite_id" => $suite_id, "suite_secret" => $suite_secret, "suite_ticket" => $suite_ticket];
-        return posturl($url, $data);
+        $suite_id = env ('SUITEID', '');                            //应用id
+        $suite_secret = env ('SUITE_SECRET', '');                  //应用密码
+        $suite_ticket = Cache::get ('SUITEICKET');
+        $data = [ "suite_id" => $suite_id, "suite_secret" => $suite_secret, "suite_ticket" => $suite_ticket ];
+        return posturl ($url, $data);
     }
+
     //获取企业凭证get_corp_token 即获取企业的access_token
     //auth_corpid  授权方corpid
     //permanent_code 永久授权码，通过get_permanent_code获取
-    private function getCorpToken($suite_access_token, $auth_corpid, $permanent_code)
+    private function getCorpToken ($suite_access_token, $auth_corpid, $permanent_code)
     {
-        $base_url = env('QYWX_BASEURL', '');
+        $base_url = env ('QYWX_BASEURL', '');
         $url = $base_url . "service/get_corp_token?suite_access_token=" . $suite_access_token;
-        $data = ["auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code];
-        return posturl($url, $data);
+        $data = [ "auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code ];
+        return posturl ($url, $data);
     }
+
     //获取企业永久授权码
     //$auth_lin_code 临时授权码
-    private function getPermanentCode($suite_access_token, $auth_lin_code)
+    private function getPermanentCode ($suite_access_token, $auth_lin_code)
     {
-        $base_url = env('QYWX_BASEURL', '');
+        $base_url = env ('QYWX_BASEURL', '');
         $url = $base_url . "service/get_permanent_code?suite_access_token=" . $suite_access_token;
-        $data = ["auth_code" => $auth_lin_code];
-        return posturl($url, $data);
+        $data = [ "auth_code" => $auth_lin_code ];
+        return posturl ($url, $data);
     }
 
     //设置授权配置set_session_info
-    private function setSessionInfo($suite_access_token, $per_auth_code)
+    private function setSessionInfo ($suite_access_token, $per_auth_code)
     {
-        $base_url = env('QYWX_BASEURL', '');
+        $base_url = env ('QYWX_BASEURL', '');
         $url = $base_url . "service/set_session_info?suite_access_token=" . $suite_access_token;
-        $data = ["pre_auth_code" => $per_auth_code, "session_info" => ["auth_type" => 1]];
-        return posturl($url, $data);
+        $data = [ "pre_auth_code" => $per_auth_code, "session_info" => [ "auth_type" => 1 ] ];
+        return posturl ($url, $data);
     }
 
     //管理员扫描登录
-    public function scanningQR()
+    public function scanningQR ()
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
+        $s_a_t_info = $this->getSuiteAccessToken ();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-        $p_a_c_info = $this->getPreAuthCode($suite_access_token);
+        $p_a_c_info = $this->getPreAuthCode ($suite_access_token);
         $per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
 
-        $res = $this->setSessionInfo($suite_access_token, $per_auth_code);
+        $res = $this->setSessionInfo ($suite_access_token, $per_auth_code);
         if ($res['errcode'] == 0) {
-            $suite_id = env('SUITEID', '');
+            $suite_id = env ('SUITEID', '');
             $durl = "api.lanxx.club";
-            $state = env('STATE_WORD', '');
-            $url = "https://open.work.weixin.qq.com/3rdapp/install?suite_id=" . $suite_id . "&pre_auth_code=" . $per_auth_code . "&redirect_uri=" . urlencode($durl) . "&state=" . $state;
-            header("Location: $url", TRUE, 302);
+            $state = env ('STATE_WORD', '');
+            $url = "https://open.work.weixin.qq.com/3rdapp/install?suite_id=" . $suite_id . "&pre_auth_code=" . $per_auth_code . "&redirect_uri=" . urlencode ($durl) . "&state=" . $state;
+            header ("Location: $url", TRUE, 302);
         } else {
             return "设置授权配置错误";
         }
     }
 
     //获取预授权码get_pre_auth_code
-    private function getPreAuthCode($suite_access_token)
+    private function getPreAuthCode ($suite_access_token)
     {
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_pre_auth_code?suite_access_token=" . $suite_access_token . "&debug=1";
-        return geturl($url);
+        return geturl ($url);
     }
 
-
     //获取suite_ticket（suite_ticket）
-    public function getSuiteTicket()
+    public function getSuiteTicket ()
     {
-        $encodingAesKey = env('ENCODINGAESKEY', '');                    //应用的回调消息加解密参数，是AES密钥的Base64编码，用于解密回调消息内容对应的密文。
-        $token = env('APPLICATION_TOKEN', '');                          //应用的TOKEN
-        $corpId = env('CORPID', '');                                    //企业corpid
-        $suiteId = env('SUITEID', '');                                  //应用id
+        $encodingAesKey = env ('ENCODINGAESKEY', '');                    //应用的回调消息加解密参数，是AES密钥的Base64编码，用于解密回调消息内容对应的密文。
+        $token = env ('APPLICATION_TOKEN', '');                          //应用的TOKEN
+        $corpId = env ('CORPID', '');                                    //企业corpid
+        $suiteId = env ('SUITEID', '');                                  //应用id
 
 
         $sVerifyMsgSig = $_GET['msg_signature'] ?? 0;                               //这是回调过来企业微信给的数据
@@ -233,41 +216,41 @@ class UserController extends BaseController
         if ($sVerifyEchoStr) {
             $sEchoStr = "";
             $wxcpt = new \WXBizMsgCrypt($token, $encodingAesKey, $corpId);
-            $errCode = $wxcpt->VerifyURL($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sVerifyEchoStr, $sEchoStr);
+            $errCode = $wxcpt->VerifyURL ($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sVerifyEchoStr, $sEchoStr);
             if ($errCode == 0) {
                 // 验证URL成功，将sEchoStr返回
-                file_put_contents($file2, "返回时间:" . date('Y-m-d H:i:s') . "sEchoStr值:" . $sEchoStr . "\n", FILE_APPEND);
-                Cache::put('SECHOSTR', $sEchoStr, 1200);
+                file_put_contents ($file2, "返回时间:" . date ('Y-m-d H:i:s') . "sEchoStr值:" . $sEchoStr . "\n", FILE_APPEND);
+                Cache::put ('SECHOSTR', $sEchoStr, 1200);
                 echo $sEchoStr;
                 exit;
             } else {
-                file_put_contents($file4, "二次验证错误，时间:" . date('Y-m-d H:i:s') . "sEchoStr值:" . $sEchoStr . ",错误编码:" . $errCode . "\n", FILE_APPEND);
+                file_put_contents ($file4, "二次验证错误，时间:" . date ('Y-m-d H:i:s') . "sEchoStr值:" . $sEchoStr . ",错误编码:" . $errCode . "\n", FILE_APPEND);
             }
         }
-        $sReqData = file_get_contents('php://input');
+        $sReqData = file_get_contents ('php://input');
         if ($sReqData) {
-            file_put_contents($file, "获取验证数据（新）" . date('Y-m-d H:i:s') . "\n" . $sReqData . "\n", FILE_APPEND);
-            file_put_contents($file1, json_encode($_GET), FILE_APPEND);
-            Cache::put('XMLHD', $sReqData, 1200);
-            Cache::put('CSHD', json_encode($_GET), 1200);
+            file_put_contents ($file, "获取验证数据（新）" . date ('Y-m-d H:i:s') . "\n" . $sReqData . "\n", FILE_APPEND);
+            file_put_contents ($file1, json_encode ($_GET), FILE_APPEND);
+            Cache::put ('XMLHD', $sReqData, 1200);
+            Cache::put ('CSHD', json_encode ($_GET), 1200);
         } else {
-            $sReqData = Cache::get('XMLHD');
+            $sReqData = Cache::get ('XMLHD');
         }
         //
         $wxcpt = new \WXBizMsgCrypt($token, $encodingAesKey, $suiteId);
         $sMsg = '';  // 解析之后的明文
-        $err_code = $wxcpt->DecryptMsg($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sReqData, $sMsg);
-        $xmls = simplexml_load_string($sMsg, 'SimpleXMLElement', LIBXML_NOCDATA); //  xml格式转成对象
-        file_put_contents($file5, "时间：" . date('Y-m-d H:i:s') . ",这是解密后的内容：" . $sMsg . "\n", FILE_APPEND);
+        $err_code = $wxcpt->DecryptMsg ($sVerifyMsgSig, $sVerifyTimeStamp, $sVerifyNonce, $sReqData, $sMsg);
+        $xmls = simplexml_load_string ($sMsg, 'SimpleXMLElement', LIBXML_NOCDATA); //  xml格式转成对象
+        file_put_contents ($file5, "时间：" . date ('Y-m-d H:i:s') . ",这是解密后的内容：" . $sMsg . "\n", FILE_APPEND);
         if ($err_code == 0) {
             switch ($xmls->InfoType) {
                 case 'suite_ticket'://推送suite_ticket协议每十分钟微信推送一次
-                    $xmls = json_decode(json_encode($xmls), 1);
+                    $xmls = json_decode (json_encode ($xmls), 1);
                     $suite_ticket = $xmls['SuiteTicket'];
                     if (!empty($suite_ticket)) {
                         //  保存下获取到数据
-                        file_put_contents($file3, "时间" . date('Y-m-d H:i:s') . " suite_ticket值：" . $suite_ticket . "\n", FILE_APPEND);
-                        Cache::put("SUITEICKET", $suite_ticket, 1200);
+                        file_put_contents ($file3, "时间" . date ('Y-m-d H:i:s') . " suite_ticket值：" . $suite_ticket . "\n", FILE_APPEND);
+                        Cache::put ("SUITEICKET", $suite_ticket, 1200);
                         echo 'success';  // 返回企业微信消息 success
                     } else {
                         echo 200;//错误信息
@@ -275,97 +258,68 @@ class UserController extends BaseController
                     break;
             }
         } else {
-            file_put_contents($file4, "首次验证错误，时间:" . date('Y-m-d H:i:s') . ",错误编码:" . $err_code . "\n", FILE_APPEND);
+            file_put_contents ($file4, "首次验证错误，时间:" . date ('Y-m-d H:i:s') . ",错误编码:" . $err_code . "\n", FILE_APPEND);
         }
     }
 
-
     //点击登录一     构造第三方应用oauth2链接
-    public function clickLoginThird()
+    public function clickLoginThird ()
     {
-        $appid = env('SUITEID', '');
+        $appid = env ('SUITEID', '');
         $durl = "api.lanxx.club";
         $state = "LANXXlanxx";
         $uri = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $appid . "&redirect_uri=" . $durl . "&response_type=code&scope=snsapi_privateinfo&state=" . $state . "#wechat_redirect";
-        header("Location: $uri", TRUE, 302);
+        header ("Location: $uri", TRUE, 302);
     }
 
     //点击登录一     构造企业oauth2链接
-    public function clickLoginOauth()
+    public function clickLoginOauth ()
     {
-        $corpID = env('CORPID', '');
+        $corpID = env ('CORPID', '');
         $durl = "api.lanxx.club";
         $state = "LANXXlanxx";
         $uri = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" . $corpID . "&redirect_uri=" . $durl . "&response_type=code&scope=snsapi_base&agentid=AGENTID&state=" . $state . "#wechat_redirect";
-        header("Location: $uri", TRUE, 302);
+        header ("Location: $uri", TRUE, 302);
     }
 
     //展示授权按钮
-    public function showPage()
+    public function showPage (Request $request)
     {
         //判断是否回调
         $auth_code = $_GET['auth_code'] ?? 0;
         if ($auth_code) {
-            $s_a_t_info = $this->getSuiteAccessToken();
+            $s_a_t_info = $this->getSuiteAccessToken ();
             $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
-            //$p_a_c_info = $this->getPreAuthCode($suite_access_token);
-            //$per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
-            //$durl = "https://api.lanxx.club";
-            //$state = "LANXXlanxx";
-            // , 'per_auth_code' => $per_auth_code, 'durl' => urlencode($durl), 'state' => $state
-
 
             $url_info = $_GET;
             $auth_lin_code = $url_info['auth_code'];//临时授权码
-            $data = $this->getPermanentCode($suite_access_token, $auth_lin_code);//获取企业永久授权码
+            $data = $this->getPermanentCode ($suite_access_token, $auth_lin_code);//获取企业永久授权码
+            //插入用户信息
+            $user_id = $this->insertUserInfo ($data['auth_user_info']['open_userid'], $request);
+            //插入企业信息
+            $this->insertCompanyInfo ($data['auth_corp_info']['corpid']);
+            //插入权限组和分配权限
+            $this->insertAuthGroup ($data['auth_corp_info']['corpid'], $user_id);
 
-
-            $url_d = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suite_access_token;
-            $data_d = ["auth_corpid" => $data['auth_corp_info']['corpid'], "permanent_code" => $data['permanent_code'], 'suite_access_token' => $suite_access_token];
-            $rrrr = posturl($url_d, $data_d);
-            $data['suite_access_token'] = $rrrr['access_token'];
-            return WxqyAuthCompany::InSertOne($data);//数据保存到本地
-
-
+            //模拟用户登录
+            $res_dl = posturl ('http://test.lanxx.club/api/v1/user/login', array ( 'username' => $data['auth_user_info']['open_userid'] . "@lanxx.club", 'password' => env ('USER_DEFAULT_PSW') ));
+            if ($res_dl['code'] == 1) {
+                header ("Location: http://test.lanxx.club?token={$res_dl['data']['token']}", TRUE, 302);
+            } else {
+                return $this->response->error ('未知错误', 900);
+            }
         } else {
-            $data = ['suite_id' => env('SUITEID', ''), 'state' => env('STATE_WORD', ''), 'agentid' => env('AGENTID', '')];
-            return view('welcome')->with('data', $data);
+            $data = [ 'suite_id' => env ('SUITEID', ''), 'state' => env ('STATE_WORD', ''), 'agentid' => env ('AGENTID', '') ];
+            return view ('welcome')->with ('data', $data);
         }
-
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     //getSuiteTicket
-
-
     //这里是入口
     //获取企业授权信息
-    public function getAuthInfo()
+    public function getAuthInfo ()
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
+        $s_a_t_info = $this->getSuiteAccessToken ();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
         //$p_a_c_info = $this->getPreAuthCode($suite_access_token);
         //$per_auth_code = $p_a_c_info['pre_auth_code'];//预授权码
@@ -374,57 +328,72 @@ class UserController extends BaseController
         $auth_corpid = "ww5a8c8cb36455ba7a";
         $permanent_code = 'ZJoMiXVOYZtjtf1xJGHQ4fQMYRkYlf1IGhmOHB1GNxn2sDqnVztHgRofHe5qCnK0zlfM-QIuTUg-TgQZj_Z5vr_l9QwZDBtvb1IMZi7cPcxxEYkLwJtJfTMo-WksJX9zSuvpvu_pIdw4Rq4lg041ugCruVZa2YDnDFIAJRkF4aXhmPH4vNo-f0ZJgAcPk_HQ0qbAwKdSGZ09e_T63cDlIw';
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_auth_info?suite_access_token=" . $suite_access_token;
-        $data = ["auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code];
-        return posturl($url, $data);
+        $data = [ "auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code ];
+        return posturl ($url, $data);
     }
 
     //获取访问用户身份
-    private function getUserInfo3rd($code)
+    private function getUserInfo3rd ($code)
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
+        $s_a_t_info = $this->getSuiteAccessToken ();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/getuserinfo3rd?suite_access_token=" . $suite_access_token . "&code=" . $code;
-        return geturl($url);
+        return geturl ($url);
     }
 
     //获取访问用户敏感信息
-    private function getuserdetail3rd($user_ticket)
+    private function getuserdetail3rd ($user_ticket)
     {
-        $base_url = env('QYWX_BASEURL', '');
-        $s_a_t_info = $this->getSuiteAccessToken();
+        $base_url = env ('QYWX_BASEURL', '');
+        $s_a_t_info = $this->getSuiteAccessToken ();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
         $url = $base_url . "service/getuserdetail3rd?suite_access_token=" . $suite_access_token;
-        $data = ["user_ticket" => $user_ticket];
-        return posturl($url, $data);
+        $data = [ "user_ticket" => $user_ticket ];
+        return posturl ($url, $data);
     }
 
-
     //获取应用的管理员列表
-    public function getAdminList()
+    public function getAdminList ()
     {
         $SUITE_ACCESS_TOKEN = "sc";
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_admin_list?suite_access_token=" . $SUITE_ACCESS_TOKEN;
-        $data = ["auth_corpid" => "auth_corpid_value", "agentid" => "1000046"];
-        return posturl($url, $data);
+        $data = [ "auth_corpid" => "auth_corpid_value", "agentid" => "1000046" ];
+        return posturl ($url, $data);
     }
 
-
     //获取企业凭证access_token
-    public function getAccessToken()
+    public function getAccessToken ()
     {
-        $s_a_t_info = $this->getSuiteAccessToken();
+        $s_a_t_info = $this->getSuiteAccessToken ();
         $suite_access_token = $s_a_t_info['suite_access_token'];//第三方应用凭证
 
         $url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_corp_token?suite_access_token=" . $suite_access_token;
 
         $auth_corpid = "ww5a8c8cb36455ba7a";
         $permanent_code = "Y13ZfuEDRpNbw3Ee7dk1zwzSlbGfxIqWkHp6fNhrAOyd7ZLLJgwNQgW3HwST_i0bA8XwBCvnCGo9FbF-fp1GwP1vRiE9fC5J8rEyvwDUqE5K9yokI2jSQWW1K1KPbcwCyRH933UaeJVGV8pJOwtQ6ORumTEjbC_Gu2pRs4CqTtlFREBAQ21GkEgiXDMy_hmMfn7pPCsLD-WighpaIrEqqA";
-        $data = ["auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code, 'suite_access_token' => $suite_access_token];
-        return posturl($url, $data);
+        $data = [ "auth_corpid" => $auth_corpid, "permanent_code" => $permanent_code, 'suite_access_token' => $suite_access_token ];
+        return posturl ($url, $data);
+    }
+
+    public function lxx ()
+    {
+        //$dd=$this->getProviderToken();
+        //$url = "https://qyapi.weixin.qq.com/cgi-bin/service/get_login_info?access_token=".$dd['provider_access_token'];
+        //$auth_code = $_GET['auth_code'] ?? 0;
+        //$data = ['auth_code'=>$auth_code];
+
+        // $r_data = posturl ($url,$data);
+        //模拟用户登录
+        $url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wwc82d448ddc777dbe&redirect_uri=https%3A%2F%2Fapi.lanxx.club%2Fweixin%2FuserLogin&response_type=code&scope=snsapi_privateinfo&agentid=1000026&state=LANXX123lanxx#wechat_redirect";
+        //$res_dl = posturl ('http://test.lanxx.club/api/v1/user/login', array ( 'username' => $r_data['user_info']['open_userid'] . "@lanxx.club", 'password' => env ('USER_DEFAULT_PSW') ));
+        //if ($res_dl['code'] == 1) {
+        header ("Location: {$url}", TRUE, 302);
+        //}
+
     }
 
     //获取Token
-    public function getToken()
+    public function getToken ()
     {
         // https://qyapi.weixin.qq.com/cgi-bin/service/get_provider_token
 
@@ -437,141 +406,141 @@ class UserController extends BaseController
         $data = '?corpid=ww0328d5bc6e988741&corpsecret=kAMeYTxTG_3kSUcHz105-eQaBByTdmPai3jDdmMNMvs';
         //$h=array("Accept:application/vnd.myapp.v1+json");
         // return $url .$data;
-        return geturl($url . $data);
+        return geturl ($url . $data);
     }
 
     //创建用户
-    public function createUser()
+    public function createUser ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/create?access_token=' . $this->authenticationToken;
-        $data = array(
+        $data = array (
             'userid' => "123456",
             'name' => "新建用户",
             'alias' => "jackzhang",
             'mobile' => "17709214962",
-            'department' => [1],
-            'order' => array('1'),
+            'department' => [ 1 ],
+            'order' => array ( '1' ),
             'position' => "程序员",
             'gender' => "1",
             'email' => "san.zhang@qq.com",
             'telephone' => "17709214962",
-            'is_leader_in_dept' => array('1'),
+            'is_leader_in_dept' => array ( '1' ),
             //'avatar_mediaid'=>'',
             'enable' => 1,
             //'extattr'=>'',
             //'to_invite'=>true 	否 	是否邀请该成员使用企业微信（将通过微信服务通知或短信或邮件下发邀请，每天自动下发一次，最多持续3个工作日），默认值为true。
         );
-        return posturl($url, json_encode($data));
+        return posturl ($url, json_encode ($data));
     }
 
     //读取成员
-    public function getUserInfo()
+    public function getUserInfo ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user';
         $userId = 'YiRan';
         $data = '/get?access_token=' . $this->authenticationToken . '&userid=' . $userId;
-        return geturl($url, $data);
+        return geturl ($url, $data);
     }
 
     //更新成员
-    public function updataUserInfo()
+    public function updataUserInfo ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/update?access_token=' . $this->authenticationToken;
-        $data = array(
+        $data = array (
             'userid' => "YiRan",
             'name' => "宋浩浩从测试",
             'alias' => "jackzhang",
             'mobile' => "17709214962",
-            'department' => [1],
-            'order' => array('1'),
+            'department' => [ 1 ],
+            'order' => array ( '1' ),
             'position' => "程序员",
             'gender' => "1",
             'email' => "san.zhang@qq.com",
             'telephone' => "17709214962",
-            'is_leader_in_dept' => array('1'),
+            'is_leader_in_dept' => array ( '1' ),
             //'avatar_mediaid'=>'',
             'enable' => 1,
             //'extattr'=>'',
             //'to_invite'=>true 	否 	是否邀请该成员使用企业微信（将通过微信服务通知或短信或邮件下发邀请，每天自动下发一次，最多持续3个工作日），默认值为true。
         );
-        return posturl($url, json_encode($data));
+        return posturl ($url, json_encode ($data));
     }
 
     //删除成员,批量删除成员
-    public function delUser()
+    public function delUser ()
     {
         $userId = 'YiRan';
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/delete?access_token=' . $this->authenticationToken . '&userid=' . $userId;
-        return geturl($url);
+        return geturl ($url);
     }
 
     //删除成员,批量删除成员
-    public function delUsers()
+    public function delUsers ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/batchdelete?access_token=' . $this->authenticationToken;
-        $data = array("useridlist" => ["zhangsan", "lisi"]);
-        return posturl($url, $data);
+        $data = array ( "useridlist" => [ "zhangsan", "lisi" ] );
+        return posturl ($url, $data);
     }
 
 
     //获取部门成员
-    public function getDepartmentUser()
+    public function getDepartmentUser ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/simplelist';
         $department_id = '1';
         $data = '?access_token=' . $this->authenticationToken . '&department_id=' . $department_id;
-        return geturl($url . $data);
+        return geturl ($url . $data);
     }
 
     //获取部门成员详情
-    public function getDepartmentUserList()
+    public function getDepartmentUserList ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/list';
         $department_id = '1';
         $data = '?access_token=' . $this->authenticationToken . '&department_id=' . $department_id;
-        return geturl($url . $data);
+        return geturl ($url . $data);
     }
 
     //userid转openid
-    public function convert_to_openid()
+    public function convert_to_openid ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/convert_to_openid?access_token=' . $this->authenticationToken;
-        $data = array('userid' => 'YiRan');
-        return posturl($url . $data);
+        $data = array ( 'userid' => 'YiRan' );
+        return posturl ($url . $data);
     }
 
     //openid转userid
-    public function convert_to_userid()
+    public function convert_to_userid ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/convert_to_userid?access_token=' . $this->authenticationToken;
-        $data = array('openid' => 'oDjGHs-1yCnGrRovBj2yHij5JAAA');
-        return posturl($url . $data);
+        $data = array ( 'openid' => 'oDjGHs-1yCnGrRovBj2yHij5JAAA' );
+        return posturl ($url . $data);
     }
 
     //邀请成员
-    public function inviteUser()
+    public function inviteUser ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/batch/invite?access_token=' . $this->authenticationToken;
-        $data = array(
-            "user" => array("UserID1", "UserID2", "UserID3"),
-            "party" => array("PartyID1", "PartyID2"),
-            "tag" => array("TagID1", "TagID2")
+        $data = array (
+            "user" => array ( "UserID1", "UserID2", "UserID3" ),
+            "party" => array ( "PartyID1", "PartyID2" ),
+            "tag" => array ( "TagID1", "TagID2" )
         );
-        return posturl($url . $data);
+        return posturl ($url . $data);
     }
 
     //获取加入企业二维码
-    public function get_join_qrcode()
+    public function get_join_qrcode ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/corp/get_join_qrcode?access_token=' . $this->authenticationToken;
-        return geturl($url);
+        return geturl ($url);
     }
 
     //获取企业活跃成员数
-    public function get_active_stat()
+    public function get_active_stat ()
     {
         $url = 'https://qyapi.weixin.qq.com/cgi-bin/user/get_active_stat?access_token=' . $this->authenticationToken;
-        return posturl($url);
+        return posturl ($url);
     }
 
     /**
@@ -579,7 +548,7 @@ class UserController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index ()
     {
         //
     }
@@ -589,7 +558,7 @@ class UserController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create ()
     {
         //
     }
@@ -600,7 +569,7 @@ class UserController extends BaseController
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store (Request $request)
     {
         //
     }
@@ -611,7 +580,7 @@ class UserController extends BaseController
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show ($id)
     {
         //
     }
@@ -622,7 +591,7 @@ class UserController extends BaseController
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit ($id)
     {
         //
     }
@@ -634,7 +603,7 @@ class UserController extends BaseController
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update (Request $request, $id)
     {
         //
     }
@@ -645,12 +614,12 @@ class UserController extends BaseController
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy ($id)
     {
         //
     }
 
-    public function ceshi()
+    public function ceshi ()
     {
         return "sssssss";
     }

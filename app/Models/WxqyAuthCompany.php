@@ -68,6 +68,7 @@ class WxqyAuthCompany extends Model
     //插入数据
     public static function InSertOne($data)
     {
+        $add_data=array();
         if (isset($data['access_token'])) {
             $add_data['access_token'] = $data['access_token'];                                          //授权方（企业）access_token,最长为512字节
         }
@@ -166,9 +167,6 @@ class WxqyAuthCompany extends Model
         }
         if (isset($data['auth_user_info']['avatar'])) {
             $add_data['a_avatar'] = $data['auth_user_info']['avatar'];
-        }
-        if (isset($data['suite_access_token'])) {
-            $add_data['suite_access_token'] = $data['suite_access_token'];
         }
         if($add_data) {
             self::create($add_data);//返回插入数据，含ID

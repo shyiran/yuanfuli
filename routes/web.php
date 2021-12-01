@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/', [\App\Http\Controllers\v1\Weixin\UserController::class, 'showPage']);
+Route::get('ss', function () {
+    return 'ss';
+});
+
 Route::get('/WW_verify_TbyMh9YHNhfm830y.txt', function () {
     return "TbyMh9YHNhfm830y";
 });

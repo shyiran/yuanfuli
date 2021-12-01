@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\v1\Weixin;
+namespace App\Http\Controllers\Weixin;
+
 
 use App\Http\Controllers\BaseController;
-
 use Illuminate\Http\Request;
 
-class TagController extends BaseController
+class OaController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -83,4 +83,15 @@ class TagController extends BaseController
     {
         //
     }
+
+    //获取员工打卡规则
+    public function getCheckRoute(){
+        $url='https://qyapi.weixin.qq.com/cgi-bin/checkin/getcheckinoption?access_token='.$this->authenticationToken;
+        $data=array(
+            'datetime'=>'1635696000',
+            'useridlist'=>['YiRan']
+        );
+        return posturl ($url,json_encode ($data));
+    }
+
 }
